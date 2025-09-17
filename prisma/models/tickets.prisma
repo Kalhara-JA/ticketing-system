@@ -1,0 +1,99 @@
+// ---- Ticketing Domain ----
+// Statuses, priorities, reopen/close flows, and RBAC come from PRD. :contentReference[oaicite:3]{index=3}
+enum TicketStatus {
+  new
+  in_progress
+  waiting_on_user
+  resolved
+  closed
+  reopened
+}
+
+enum Priority {
+  low
+  normal
+  high
+  urgent
+}
+
+model Ticket {
+  id       String       @id @default(cuid())
+  title    String
+  body     String
+  status   TicketStatus @default(new)
+  priority Priority     @default(normal)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  comments    Comment[]
+  attachments Attachment[]
+
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status])
+  @@index([userId, createdAt])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Comment {
+  id       String @id @default(cuid())
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId String
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  body      String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+model Attachment {
+  id       String @id @default(cuid())
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId String
+
+  filename    String
+  key         String // MinIO object key
+  size        Int // DB check enforces <= 10MB in migration
+  contentType String // DB check enforces allowed types in migration
+
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  uploadedById String
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([contentType])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  action     String // e.g., "ticket:create", "ticket:status_change", "comment:add"
+  targetType String // "ticket" | "comment" | "attachment"
+  targetId   String
+  changes    Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model NotificationDedup {
+  id           String   @id @default(cuid())
+  ticketId     String
+  eventType    String // "created" | "status_changed" | "comment_added" | "reopened"
+  minuteBucket DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([ticketId, eventType, minuteBucket])
+}

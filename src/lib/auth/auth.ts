@@ -1,0 +1,109 @@
+import { APIError, betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
+import { resend, EMAIL_FROM } from "@/lib/email/resend";
+import { renderAuthEmail } from "@/lib/email/templates";
+import { prisma } from "../db/prisma";
+import { USERNAME_REGEX } from "../validation/constants";
+
+export const auth = betterAuth({
+  baseURL: process.env.APP_URL,
+  secret: process.env.AUTH_SECRET,
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  user: {
+    additionalFields: {
+      role: { type: "string", defaultValue: "user", input: false },
+      username: { type: "string", required: true, unique: true },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const username = (user.username as string).trim().toLowerCase();
+          if (!USERNAME_REGEX.test(username)) {
+            throw new APIError("BAD_REQUEST", {
+              message:
+                "Username must be 3–32 chars (letters, numbers, . _ -) with no spaces.",
+            });
+          }
+          // Enforce role at server-side; ignore any client-provided role
+          const role = user.role === "admin" ? "admin" : "user";
+          return { data: { ...user, username, role } };
+        },
+      },
+      update: {
+        before: async (data) => {
+          const next = { ...data };
+          if (typeof next.username === "string") {
+            next.username = next.username.trim().toLowerCase();
+            if (!USERNAME_REGEX.test(next.username as string)) {
+              throw new APIError("BAD_REQUEST", {
+                message:
+                  "Username must be 3–32 chars (letters, numbers, . _ -) with no spaces.",
+              });
+            }
+          }
+          // Never allow client-side role escalation
+          if (typeof next.role === "string" && next.role !== "user" && next.role !== "admin") {
+            next.role = "user";
+          }
+          return { data: next };
+        },
+      },
+    },
+  },
+
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,      // verify before session
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    autoSignIn: true,
+
+    // Reset password email
+    async sendResetPassword({ user, url, token }) {
+      const html = renderAuthEmail({
+        title: "Reset your password",
+        intro: `Hi ${user.name ?? "there"},`,
+        body: `We received a request to reset your password. If this was you, click the button below.`,
+        cta: { label: "Reset Password", url },
+        footer: "If you didn’t request a reset, you can safely ignore this email.",
+      });
+      try {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: user.email,
+          subject: "Reset your password",
+          html,
+        });
+      } catch (error) {
+        console.error("Failed to send reset password email", { error });
+      }
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    async sendVerificationEmail({ user, url, token }) {
+      const html = renderAuthEmail({
+        title: "Verify your email",
+        intro: `Welcome ${user.name ?? ""}!`,
+        body: `Please verify your email address to activate your account.`,
+        cta: { label: "Verify Email", url },
+        footer: "This link will expire soon for security.",
+      });
+      try {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: user.email,
+          subject: "Verify your email",
+          html,
+        });
+      } catch (error) {
+        console.error("Failed to send verification email", { error });
+      }
+    },
+  },
+  plugins: [nextCookies()],
+});
