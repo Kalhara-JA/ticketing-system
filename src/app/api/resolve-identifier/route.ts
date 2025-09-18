@@ -19,7 +19,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
         return NextResponse.json({ email: user.email.toLowerCase() });
-    } catch (e) {
+    } catch {
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }

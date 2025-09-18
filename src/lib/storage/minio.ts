@@ -10,7 +10,32 @@ export const BUCKET = process.env.MINIO_BUCKET!;
 
 export const minio = new Client({ endPoint, port, useSSL, accessKey, secretKey, region: "us-east-1" });
 
+// Basic verification logs (non-sensitive)
+if (process.env.NODE_ENV !== "production") {
+  // Do not log credentials
+  console.log("[minio] Initialized client", {
+    endPoint,
+    port,
+    useSSL,
+    bucket: BUCKET,
+    region: "us-east-1",
+  });
+}
+
 export async function ensureBucket() {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[minio] Checking bucket existence", { bucket: BUCKET });
+  }
   const exists = await minio.bucketExists(BUCKET).catch(() => false);
-  if (!exists) await minio.makeBucket(BUCKET, "us-east-1");
+  if (!exists) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[minio] Bucket not found. Creating bucket", { bucket: BUCKET });
+    }
+    await minio.makeBucket(BUCKET, "us-east-1");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[minio] Bucket created", { bucket: BUCKET });
+    }
+  } else if (process.env.NODE_ENV !== "production") {
+    console.log("[minio] Bucket exists", { bucket: BUCKET });
+  }
 }

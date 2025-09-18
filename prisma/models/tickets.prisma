@@ -37,6 +37,7 @@ model Ticket {
   @@index([status])
   @@index([userId, createdAt])
   @@index([createdAt(sort: Desc)])
+  @@unique([createdAt, id], name: "createdAt_id")
 }
 
 model Comment {

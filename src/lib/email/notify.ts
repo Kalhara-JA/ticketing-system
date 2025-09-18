@@ -1,6 +1,6 @@
 // src/lib/email/notify.ts
 import { prisma } from "@/lib/db/prisma";
-import { resend } from "./resend";
+import { EMAIL_FROM, resend } from "./resend";
 
 export async function shouldSendNotification(ticketId: string, eventType: string) {
     const now = new Date();
@@ -15,7 +15,7 @@ export async function shouldSendNotification(ticketId: string, eventType: string
 
 export async function sendEmail(to: string, subject: string, html: string) {
     await resend.emails.send({
-        from: "Support <no-reply@" + new URL(process.env.APP_URL!).hostname + ">",
+        from: EMAIL_FROM,
         to, subject, html,
     });
 }

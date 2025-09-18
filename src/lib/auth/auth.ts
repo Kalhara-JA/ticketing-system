@@ -62,7 +62,10 @@ export const auth = betterAuth({
     autoSignIn: true,
 
     // Reset password email
-    async sendResetPassword({ user, url, token }) {
+    async sendResetPassword({ user, url }) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[auth] Sending reset password email", { to: user.email, url });
+      }
       const html = renderAuthEmail({
         title: "Reset your password",
         intro: `Hi ${user.name ?? "there"},`,
@@ -77,6 +80,9 @@ export const auth = betterAuth({
           subject: "Reset your password",
           html,
         });
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[auth] Reset password email queued", { to: user.email });
+        }
       } catch (error) {
         console.error("Failed to send reset password email", { error });
       }
@@ -85,7 +91,10 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
-    async sendVerificationEmail({ user, url, token }) {
+    async sendVerificationEmail({ user, url }) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[auth] Sending verification email", { to: user.email, url });
+      }
       const html = renderAuthEmail({
         title: "Verify your email",
         intro: `Welcome ${user.name ?? ""}!`,
@@ -100,6 +109,9 @@ export const auth = betterAuth({
           subject: "Verify your email",
           html,
         });
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[auth] Verification email queued", { to: user.email });
+        }
       } catch (error) {
         console.error("Failed to send verification email", { error });
       }

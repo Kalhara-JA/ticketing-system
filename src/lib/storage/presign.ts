@@ -1,10 +1,19 @@
 // src/lib/storage/presign.ts
-import { minio, BUCKET } from "./minio";
+import { minio, BUCKET, ensureBucket } from "./minio";
 
 export async function presignUpload(key: string, expirySeconds = 900) {
+    // Ensure bucket exists before issuing presigned URLs
+    await ensureBucket();
+    if (process.env.NODE_ENV !== "production") {
+        console.log("[minio] Presigning PUT", { bucket: BUCKET, key, expirySeconds });
+    }
     return minio.presignedPutObject(BUCKET, key, expirySeconds);
 }
-export async function presignDownload(key: string, expirySeconds = 900) {
+export async function presignDownload(key: string, expirySeconds = 900, resHeaders?: Record<string, string>) {
+    await ensureBucket();
+    if (process.env.NODE_ENV !== "production") {
+        console.log("[minio] Presigning GET", { bucket: BUCKET, key, expirySeconds, resHeaders });
+    }
     return minio.presignedGetObject(BUCKET, key, expirySeconds);
 }
 export async function deleteObject(key: string) {

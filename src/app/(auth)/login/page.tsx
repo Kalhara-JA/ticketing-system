@@ -48,33 +48,49 @@ export default function LoginPage() {
 
       router.push("/tickets"); // user default landing
       router.refresh();
-    } catch (e: any) {
-      setError(e?.message ?? "Something went wrong");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
   return (
     <AuthCard title="Log in">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium">Email or Username</label>
-          <input {...register("identifier")} className="mt-1 w-full rounded-md border p-2" />
-          {errors.identifier && <p className="mt-1 text-sm text-red-600">{errors.identifier.message}</p>}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900">Email or Username</label>
+          <input 
+            {...register("identifier")} 
+            className="input" 
+            placeholder="Enter your email or username"
+          />
+          {errors.identifier && <p className="text-sm text-red-600">{errors.identifier.message}</p>}
         </div>
-        <div>
-          <label className="block text-sm font-medium">Password</label>
-          <input {...register("password")} type="password" className="mt-1 w-full rounded-md border p-2" />
-          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900">Password</label>
+          <input 
+            {...register("password")} 
+            type="password" 
+            className="input" 
+            placeholder="Enter your password"
+          />
+          {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
         </div>
 
-        <button disabled={isSubmitting} className="w-full rounded-md bg-black p-2 text-white disabled:opacity-50">
+        <button 
+          disabled={isSubmitting} 
+          className="btn btn-primary btn-md w-full"
+        >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
 
-        {error && <p className="pt-2 text-sm text-red-600">{error}</p>}
+        {error && (
+          <div className="rounded-md bg-red-50 p-3">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
-        <p className="pt-2 text-center text-sm opacity-80">
-          No account? <a className="underline" href="/signup">Create one</a>
+        <p className="text-center text-sm text-gray-600">
+          No account? <a className="font-medium text-blue-600 hover:underline" href="/signup">Create one</a>
         </p>
       </form>
     </AuthCard>
