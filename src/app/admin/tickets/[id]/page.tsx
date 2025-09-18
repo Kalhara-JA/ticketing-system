@@ -5,6 +5,10 @@ import { presignDownload } from "@/lib/storage/presign";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm"; // reuse
 import ClientAttachmentAdder from "@/features/tickets/components/ClientAttachmentAdder"; // reuse
 import Controls from "./Controls";
+import TicketHeader from "@/features/tickets/components/TicketHeader";
+import TicketAttachments from "@/features/tickets/components/TicketAttachments";
+import TicketComments from "@/features/tickets/components/TicketComments";
+import { getAdminTicketDetail } from "@/features/tickets/repositories/ticketRepository";
 
 export const revalidate = 0;
 
@@ -12,21 +16,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
     const { id } = await params;
     await requireAdmin();
 
-    const ticket = await prisma.ticket.findUnique({
-        where: { id },
-        select: {
-            id: true, title: true, body: true, status: true, priority: true, createdAt: true,
-            user: { select: { username: true, email: true } },
-            attachments: { select: { id: true, filename: true, key: true, size: true, contentType: true, createdAt: true } },
-            comments: {
-                orderBy: { createdAt: "asc" },
-                select: {
-                    id: true, body: true, createdAt: true, deletedAt: true,
-                    author: { select: { id: true, username: true, role: true } },
-                }
-            }
-        }
-    });
+    const ticket = await getAdminTicketDetail(id);
     if (!ticket) return notFound();
 
     const downloads = await Promise.all(
@@ -38,42 +28,34 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
 
 
     return (
-        <div className="space-y-6">
-            <section className="space-y-1">
-                <h1 className="text-xl font-semibold">{ticket.title}</h1>
-                <p className="opacity-80 text-sm">Requester: {ticket.user.username} · Status: {ticket.status} · Priority: {ticket.priority}</p>
-                <p className="whitespace-pre-wrap">{ticket.body}</p>
-            </section>
+        <div className="container mx-auto space-y-6 p-6">
+            <TicketHeader
+                title={ticket.title}
+                status={ticket.status}
+                priority={ticket.priority}
+                createdAt={ticket.createdAt}
+                requester={ticket.user.username}
+                rightSlot={<Controls ticketId={ticket.id} currentStatus={ticket.status} currentPriority={ticket.priority} />}
+            />
 
-            <section className="space-y-2">
-                <h2 className="text-lg font-semibold">Attachments</h2>
-                {downloads.length ? (
-                    <ul className="list-disc pl-5">
-                        {downloads.map(d => (
-                            <li key={d.id}><a className="underline" href={d.url}>{d.filename}</a></li>
-                        ))}
-                    </ul>
-                ) : <p className="opacity-70 text-sm">No attachments yet.</p>}
-                <ClientAttachmentAdder ticketId={ticket.id} />
-            </section>
-
-            <section className="space-y-3">
-                <h2 className="text-lg font-semibold">Comments</h2>
-                <div className="space-y-3">
-                    {ticket.comments.map(c => (
-                        <div key={c.id} className="rounded-lg border p-3">
-                            <div className="mb-1 text-sm opacity-70">
-                                {c.author.username} {c.author.role === "admin" && "(Admin)"} · {new Date(c.createdAt).toLocaleString()}
-                            </div>
-                            {c.deletedAt ? <div className="italic opacity-60">[deleted]</div> : <div className="whitespace-pre-wrap">{c.body}</div>}
-                        </div>
-                    ))}
+            {/* Description */}
+            <div className="card p-6">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900">Description</h2>
+                <div className="prose prose-sm max-w-none text-gray-900">
+                    <p className="whitespace-pre-wrap">{ticket.body}</p>
                 </div>
-                <ClientCommentForm ticketId={ticket.id} />
-            </section>
+            </div>
 
-            <Controls ticketId={ticket.id} currentStatus={ticket.status} currentPriority={ticket.priority} />
+            <TicketAttachments
+                items={downloads.map(d => ({ id: d.id, filename: d.filename, url: d.url }))}
+                after={<ClientAttachmentAdder ticketId={ticket.id} />}
+            />
 
+            <TicketComments
+                comments={ticket.comments as any}
+                after={<ClientCommentForm ticketId={ticket.id} />}
+                canDelete
+            />
         </div>
     );
 }

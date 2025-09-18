@@ -6,16 +6,15 @@ import {
     REOPEN_WINDOW_DAYS,
     TICKET_PRIORITIES,
     TICKET_STATUSES,
-    type TicketPriority,
-    type TicketStatus,
 } from "@/features/tickets/constants";
+import type { $Enums } from "../../../../generated/prisma";
 
 const KEY_PREFIX = (userId: string) => `u/${userId}/`;
-type UserCtx = { id: string; role: "user" | "admin"; email: string; username: string };
+type UserCtx = { id: string; role: $Enums.Role; email: string; username: string };
 
 // Status constants removed as they were unused
 
-const ALLOWED: Record<TicketStatus, TicketStatus[]> = {
+const ALLOWED: Record<$Enums.TicketStatus, $Enums.TicketStatus[]> = {
     new: ["in_progress", "closed"],
     in_progress: ["waiting_on_user", "resolved", "closed"],
     waiting_on_user: ["in_progress", "resolved", "closed"],
@@ -94,7 +93,7 @@ export const ticketService = {
     async updatePriority(opts: {
         admin: UserCtx;
         ticketId: string;
-        priority: TicketPriority;
+        priority: $Enums.Priority;
         ip?: string | null;
     }) {
         if (opts.admin.role !== "admin") throw new Error("Forbidden");
@@ -126,7 +125,7 @@ export const ticketService = {
     async updateStatus(opts: {
         admin: UserCtx;
         ticketId: string;
-        status: TicketStatus;
+        status: $Enums.TicketStatus;
         ip?: string | null;
     }) {
         if (opts.admin.role !== "admin") throw new Error("Forbidden");
@@ -135,7 +134,7 @@ export const ticketService = {
 
         const ticket = await getTicketForAdmin(opts.ticketId);
         if (!ticket) throw new Error("Not found");
-        const prev = ticket.status as TicketStatus;
+        const prev = ticket.status as $Enums.TicketStatus;
 
         if (prev === next) return { id: ticket.id, status: next };
 
@@ -144,7 +143,7 @@ export const ticketService = {
 
         // timestamp side-effects
         const data: Partial<{
-            status: TicketStatus;
+            status: $Enums.TicketStatus;
             resolvedAt: Date | null;
             closedAt: Date | null;
         }> = { status: next };
@@ -245,6 +244,6 @@ export const ticketService = {
             });
         }
 
-        return { id: updated.id, status: "reopened" as TicketStatus };
+        return { id: updated.id, status: "reopened" as $Enums.TicketStatus };
     },
 };

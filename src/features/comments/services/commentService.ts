@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import { audit } from "@/features/audit/audit";
 import { shouldSendNotification } from "@/lib/email/notify";
 import { sendCommentAddedEmail } from "@/features/tickets/email";
+import { ADMIN_EMAIL } from "@/lib/email/resend";
 
 // Basic RBAC helpers for this feature
 async function canReadTicket(user: { id: string; role: string }, ticketId: string) {
@@ -36,13 +37,13 @@ export const commentService = {
 
         // Notify the "other party"
         const isAdmin = opts.user.role === "admin";
-        const recipientEmail = isAdmin ? comment.ticket.user.email : process.env.ADMIN_EMAIL!;
+        const recipientEmail = isAdmin ? comment.ticket.user.email : ADMIN_EMAIL;
         if (await shouldSendNotification(opts.ticketId, "comment_added")) {
             await sendCommentAddedEmail({
                 ticketId: comment.ticket.id,
                 title: comment.ticket.title,
                 recipientEmail,
-            });
+            }, isAdmin ? "user" : "admin");
         }
 
         return { id: comment.id };

@@ -34,6 +34,12 @@ export default async function TopNav() {
                             >
                                 All Tickets
                             </Link>
+                            <Link 
+                                href="/admin/audit" 
+                                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                            >
+                                Audit Logs
+                            </Link>
                         </>
                     )}
                     <div className="flex items-center gap-4">
