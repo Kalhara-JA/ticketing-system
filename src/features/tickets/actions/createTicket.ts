@@ -1,8 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
 import { headers } from "next/headers";
+import { requireUser } from "@/lib/auth/session";
 import { ticketService } from "@/features/tickets/services/ticketService";
 import { CreateTicketInput } from "@/lib/validation/ticketSchemas";
 
@@ -21,3 +21,5 @@ export async function createTicketAction(input: z.infer<typeof CreateTicketInput
 
     return { id: ticket.id };
 }
+
+

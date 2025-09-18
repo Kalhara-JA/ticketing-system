@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES } from "@/lib/validation/constants";
 import { AttachmentMeta } from "@/lib/validation/ticketSchemas";
 import { z } from "zod";
-import { addAttachmentsAction } from "../../../app/(user)/tickets/[id]/actions";
+import { addAttachmentsAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 
 export default function ClientAttachmentAdder({ ticketId }: { ticketId: string }) {

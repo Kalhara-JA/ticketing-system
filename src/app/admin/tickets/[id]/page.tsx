@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { presignDownload } from "@/lib/storage/presign";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm"; // reuse
 import ClientAttachmentAdder from "@/features/tickets/components/ClientAttachmentAdder"; // reuse
-import Controls from "./Controls";
+import AdminTicketControls from "@/features/tickets/components/AdminTicketControls";
 import TicketHeader from "@/features/tickets/components/TicketHeader";
 import TicketAttachments from "@/features/tickets/components/TicketAttachments";
 import TicketComments from "@/features/tickets/components/TicketComments";
@@ -35,7 +35,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
                 priority={ticket.priority}
                 createdAt={ticket.createdAt}
                 requester={ticket.user.username}
-                rightSlot={<Controls ticketId={ticket.id} currentStatus={ticket.status} currentPriority={ticket.priority} />}
+                rightSlot={<AdminTicketControls ticketId={ticket.id} currentStatus={ticket.status} currentPriority={ticket.priority} />}
             />
 
             {/* Description */}

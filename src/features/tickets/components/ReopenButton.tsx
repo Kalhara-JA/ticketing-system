@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reopenTicketAction } from "@/app/(user)/tickets/[id]/actions";
+import { reopenTicketAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 
 export default function ReopenButton({ ticketId }: { ticketId: string }) {

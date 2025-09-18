@@ -1,14 +1,14 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { updateTicketPriorityAction, updateTicketStatusAction } from "./actions";
+import { updateTicketPriorityAction, updateTicketStatusAction } from "@/features/tickets/actions/adminTicket";
 import { useRouter } from "next/navigation";
-import type { $Enums } from "../../../../../generated/prisma";
+import type { $Enums } from "../../../../generated/prisma";
 
 const statuses = ["new", "in_progress", "waiting_on_user", "resolved", "closed", "reopened"] as const;
 const priorities = ["low", "normal", "high", "urgent"] as const;
 
-export default function Controls({ ticketId, currentStatus, currentPriority }:
+export default function AdminTicketControls({ ticketId, currentStatus, currentPriority }:
     { ticketId: string; currentStatus: $Enums.TicketStatus; currentPriority: $Enums.Priority }) {
     const [status, setStatus] = useState<$Enums.TicketStatus>(currentStatus);
     const [priority, setPriority] = useState<$Enums.Priority>(currentPriority);
@@ -106,3 +106,5 @@ export default function Controls({ ticketId, currentStatus, currentPriority }:
         </div>
     );
 }
+
+

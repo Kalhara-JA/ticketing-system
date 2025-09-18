@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreateTicketInput, AttachmentMeta } from "@/lib/validation/ticketSchemas";
-import { createTicketAction } from "./actions";
+import { createTicketAction } from "@/features/tickets/actions/createTicket";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_COUNT } from "@/lib/validation/constants";
 
 type FormData = z.infer<typeof CreateTicketInput>;
@@ -111,7 +111,7 @@ export default function NewTicketPage() {
                         <textarea 
                             {...register("body")} 
                             rows={6} 
-                            className="input resize-none" 
+                            className="input resize" 
                             placeholder="Provide detailed information about your request..."
                         />
                         {errors.body && <p className="text-sm text-destructive">{errors.body.message}</p>}

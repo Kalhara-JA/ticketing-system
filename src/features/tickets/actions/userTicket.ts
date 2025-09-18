@@ -7,7 +7,7 @@ import { commentService } from "@/features/comments/services/commentService";
 import { attachmentService } from "@/features/attachments/services/attachmentService";
 import { AttachmentMeta, CommentInput } from "@/lib/validation/ticketSchemas";
 import { ticketService } from "@/features/tickets/services/ticketService";
-import type { $Enums } from "../../../../../generated/prisma";
+import type { $Enums } from "../../../../generated/prisma";
 
 export async function addCommentAction(input: z.infer<typeof CommentInput>) {
     const user = await requireUser();
@@ -39,3 +39,5 @@ export async function reopenTicketAction(ticketId: string) {
     const ip = (await headers()).get("x-forwarded-for") ?? null;
     return ticketService.reopen({ actor: { ...user, role: user.role as $Enums.Role }, ticketId, ip });
 }
+
+

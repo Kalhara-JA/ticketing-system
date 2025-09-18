@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth/session";
 import { ticketService } from "@/features/tickets/services/ticketService";
-import type { $Enums } from "../../../../../generated/prisma";
+import type { $Enums } from "../../../../generated/prisma";
 
 export async function updateTicketPriorityAction(ticketId: string, priority: $Enums.Priority) {
     const admin = await requireAdmin();
@@ -16,3 +16,5 @@ export async function updateTicketStatusAction(ticketId: string, status: $Enums.
     const ip = (await headers()).get("x-forwarded-for") ?? null;
     return ticketService.updateStatus({ admin: { ...admin, role: admin.role as $Enums.Role }, ticketId, status, ip });
 }
+
+

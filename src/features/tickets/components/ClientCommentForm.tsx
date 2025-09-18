@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { CommentInput } from "@/lib/validation/ticketSchemas";
-import { addCommentAction } from "../../../app/(user)/tickets/[id]/actions";
+import { addCommentAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 
 export default function ClientCommentForm({ ticketId }: { ticketId: string }) {
