@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/db/prisma";
 import { requireAdmin } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm"; // reuse
@@ -42,7 +41,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
             <TicketAttachments items={attachments} after={<ClientAttachmentAdder ticketId={ticket.id} />} />
 
             <TicketComments
-                comments={ticket.comments as any}
+                comments={ticket.comments}
                 after={<ClientCommentForm ticketId={ticket.id} />}
                 canDelete
             />

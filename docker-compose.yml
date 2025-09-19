@@ -1,15 +1,21 @@
 version: "3.9"
 services:
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_PASSWORD: postgres
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_DB: tickets
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - dbdata:/var/lib/postgresql/data
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: tickets
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   minio:
     image: minio/minio:latest
@@ -26,21 +32,35 @@ services:
   app:
     build: .
     depends_on:
-      - db
-      - minio
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
-      APP_URL: http://localhost:3000
-      AUTH_SECRET: replace-with-a-long-random-string
+      # Docker-specific overrides for internal networking
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
-      RESEND_API_KEY: replace-me
-      ADMIN_EMAIL: admin@example.com
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_SSL: "false"
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: ticket-attachments
-      AUTO_CLOSE_DAYS: 14
+      MINIO_SSL: false
+      # Use variables from .env file with defaults
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-ticket-attachments}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      AUTO_CLOSE_DAYS: ${AUTO_CLOSE_DAYS:-14}
     ports:
       - "3000:3000"
 
@@ -48,13 +68,20 @@ services:
   autoclose:
     build: .
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: sh -c "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
+    env_file:
+      - .env
     environment:
+      # Docker-specific overrides for internal networking
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
-      RESEND_API_KEY: replace-me
       APP_URL: http://localhost:3000
-      AUTO_CLOSE_DAYS: 14
+      # Use variables from .env file with defaults
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      AUTO_CLOSE_DAYS: ${AUTO_CLOSE_DAYS:-14}
 
 volumes:
   dbdata:

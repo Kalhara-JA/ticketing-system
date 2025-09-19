@@ -11,7 +11,7 @@ export async function listAuditLogs(opts: {
   const pageSize = Math.max(1, Math.min(opts.pageSize ?? 20, 100));
   const skip = (page - 1) * pageSize;
 
-  const where: any = {};
+  const where: Record<string, unknown> = {};
   if (opts.targetType) where.targetType = { contains: opts.targetType, mode: "insensitive" };
   if (opts.action) where.action = { contains: opts.action, mode: "insensitive" };
   if (opts.actor && opts.actor.trim() !== "") {

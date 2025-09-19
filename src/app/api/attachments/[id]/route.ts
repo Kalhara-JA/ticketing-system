@@ -52,7 +52,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 "cache-control": "private, no-store",
             }),
         });
-    } catch (err) {
+    } catch {
         return NextResponse.json({ error: "Download failed" }, { status: 500 });
     }
 }

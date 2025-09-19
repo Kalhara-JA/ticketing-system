@@ -138,8 +138,10 @@ export const ticketService = {
 
         if (prev === next) return { id: ticket.id, status: next };
 
-        // transition guard
-        if (!ALLOWED[prev]?.includes(next)) throw new Error(`Invalid transition: ${prev} → ${next}`);
+        // transition guard - admins can bypass restrictions
+        if (opts.admin.role !== "admin" && !ALLOWED[prev]?.includes(next)) {
+            throw new Error(`Invalid transition: ${prev} → ${next}`);
+        }
 
         // timestamp side-effects
         const data: Partial<{

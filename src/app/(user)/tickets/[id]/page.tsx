@@ -1,5 +1,4 @@
 // src/app/(user)/tickets/[id]/page.tsx
-import { prisma } from "@/lib/db/prisma";
 import { requireUser } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm";
@@ -53,7 +52,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
       {/* Comments */}
       <TicketComments
-        comments={ticket.comments as any}
+        comments={ticket.comments}
         after={<ClientCommentForm ticketId={ticket.id} />}
         currentUserId={user.id}
       />
