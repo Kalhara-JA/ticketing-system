@@ -25,7 +25,8 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
     "resend": "^6.1.0",
-    "zod": "^4.1.8"
+    "zod": "^4.1.8",
+    "prisma": "^6.16.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -39,7 +40,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "jsdom": "^27.0.0",
-    "prisma": "^6.16.2",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5",

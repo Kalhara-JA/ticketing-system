@@ -1,87 +1,105 @@
 version: "3.9"
+
 services:
   db:
-    image: postgres:latest
+    image: postgres:16-alpine
+    container_name: ticketing-db
+    restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tickets
     ports:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tickets || exit 1"]
       interval: 5s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 15
+      start_period: 15s
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-10-13T01-28-43Z
+    container_name: ticketing-minio
     command: server /data --console-address ":9001"
+    restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: ticketing-app
     depends_on:
       db:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     environment:
-      # Docker-specific overrides for internal networking
       NODE_ENV: production
+      # In-compose networking overrides
       DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_SSL: false
-      # Use variables from .env file with defaults
+      MINIO_SSL: "false"
+      APP_URL: http://localhost:3000
+      BETTER_AUTH_URL: http://localhost:3000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-ticket-attachments}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: http://localhost:3000
-      APP_URL: http://localhost:3000
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       AUTO_CLOSE_DAYS: ${AUTO_CLOSE_DAYS:-14}
     ports:
       - "3000:3000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Optional: run the auto-close job hourly
   autoclose:
-    build: .
+    profiles: ["jobs"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: ticketing-autoclose
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
+    command: bash -lc "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
     env_file:
       - .env
     environment:
-      # Docker-specific overrides for internal networking
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
-      APP_URL: http://localhost:3000
-      # Use variables from .env file with defaults
+      APP_URL: http://app:3000
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
       AUTO_CLOSE_DAYS: ${AUTO_CLOSE_DAYS:-14}
+    restart: unless-stopped
 
 volumes:
   dbdata:
