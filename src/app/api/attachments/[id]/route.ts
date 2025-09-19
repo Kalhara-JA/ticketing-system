@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { getSession } from "@/lib/auth/session";
-import { presignDownload } from "@/lib/storage/presign";
+import { minio, BUCKET } from "@/lib/storage/minio";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getSession();
@@ -26,16 +26,33 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const isAdmin = session.user.role === "admin";
     if (!(isOwner || isAdmin)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const url = await presignDownload(
-        a.key,
-        60, // 1 minute is plenty for a redirect
-        {
-            "response-content-type": a.contentType,
-            "response-content-disposition": `inline; filename="${encodeURIComponent(a.filename)}"`,
-            // If you prefer forced download:
-            // "response-content-disposition": `attachment; filename="${encodeURIComponent(a.filename)}"`,
-        }
-    );
+    // Stream the object through the API to avoid exposing presigned URLs
+    try {
+        const stream = await minio.getObject(BUCKET, a.key);
+        // Convert Node stream to Web ReadableStream
+        const webStream = new ReadableStream({
+            start(controller) {
+                stream.on("data", (chunk: Buffer) => controller.enqueue(chunk));
+                stream.on("end", () => controller.close());
+                stream.on("error", (err: unknown) => controller.error(err));
+            },
+            cancel() {
+                stream.destroy();
+            },
+        });
 
-    return NextResponse.redirect(url);
+        return new Response(webStream, {
+            status: 200,
+            headers: new Headers({
+                "content-type": a.contentType,
+                "content-length": String(a.size),
+                "content-disposition": `inline; filename="${encodeURIComponent(a.filename)}"`,
+                // To force download instead:
+                // "content-disposition": `attachment; filename="${encodeURIComponent(a.filename)}"`,
+                "cache-control": "private, no-store",
+            }),
+        });
+    } catch (err) {
+        return NextResponse.json({ error: "Download failed" }, { status: 500 });
+    }
 }

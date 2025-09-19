@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { requireAdmin } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
-import { presignDownload } from "@/lib/storage/presign";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm"; // reuse
 import ClientAttachmentAdder from "@/features/tickets/components/ClientAttachmentAdder"; // reuse
 import AdminTicketControls from "@/features/tickets/components/AdminTicketControls";
@@ -19,13 +18,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
     const ticket = await getAdminTicketDetail(id);
     if (!ticket) return notFound();
 
-    const downloads = await Promise.all(
-        ticket.attachments.map(async a => ({
-            id: a.id, filename: a.filename, url: await presignDownload(a.key, 10 * 60)
-        }))
-    );
-
-
+    const attachments = ticket.attachments.map(a => ({ id: a.id, filename: a.filename }));
 
     return (
         <div className="container mx-auto space-y-6 p-6">
@@ -46,10 +39,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
                 </div>
             </div>
 
-            <TicketAttachments
-                items={downloads.map(d => ({ id: d.id, filename: d.filename, url: d.url }))}
-                after={<ClientAttachmentAdder ticketId={ticket.id} />}
-            />
+            <TicketAttachments items={attachments} after={<ClientAttachmentAdder ticketId={ticket.id} />} />
 
             <TicketComments
                 comments={ticket.comments as any}
