@@ -76,27 +76,31 @@ scripts/
 Create `.env`:
 
 ```bash
-# App
-APP_URL=http://localhost:3000
-AUTH_SECRET=replace-with-a-long-random-string
+# Application Configuration
+APP_URL="http://localhost:3000"
+NODE_ENV="development"
+AUTO_CLOSE_DAYS=14
 
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tickets?schema=public
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tickets?schema=public"
 
-# Email (Resend)
-RESEND_API_KEY=replace-me
-ADMIN_EMAIL=admin@example.com
+# Authentication
+BETTER_AUTH_SECRET="T1OeNmemOXA6jtOUM0x3ZgpoiuUgHcjh"
+BETTER_AUTH_URL="http://localhost:3000"
 
-# MinIO (or S3 values)
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_SSL=false
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=ticket-attachments
+# Email Configuration
+RESEND_API_KEY="replace-me"
+EMAIL_FROM="Support <onboarding@resend.dev>"
+ADMIN_EMAIL="admin@example.com"
 
-# (Optional) jobs
-AUTO_CLOSE_DAYS=14
+# MinIO Configuration
+MINIO_ENDPOINT="localhost"
+MINIO_PORT="9000"
+MINIO_SSL="false"
+MINIO_ACCESS_KEY="minioadmin"
+MINIO_SECRET_KEY="minioadmin"
+MINIO_BUCKET="ticket-attachments"
+
 ```
 
 ---
@@ -105,16 +109,16 @@ AUTO_CLOSE_DAYS=14
 
 ```bash
 # 1) Install deps
-npm ci
+pnpm install
 
 # 2) Build the composed Prisma schema + generate client
-npm run prisma:generate
+pnpm run prisma:generate
 
 # 3) Run migrations (includes pg_trgm + FTS + DB checks)
-npm run prisma:migrate
+pnpm run prisma:migrate
 
 # 4) Run dev server
-npm run dev
+pnpm run dev
 ```
 
 Visit:
@@ -126,7 +130,7 @@ Visit:
 * `/admin/dashboard` → admin dashboard (after promoting a user’s `role` to `admin`)
 
 > **Promote to admin**
-> Open Prisma Studio: `npx prisma studio`, set `User.role = 'admin'` for your account.
+> Open Prisma Studio: `pnpm prisma studio`, set `User.role = 'admin'` for your account.
 
 ---
 
@@ -150,12 +154,11 @@ Visit:
 
 ```bash
 # Prisma helpers (compose schema parts -> schema.prisma, generate client, run migrations)
-npm run prisma:build-schema
-npm run prisma:generate
-npm run prisma:migrate
+pnpm run prisma:generate
+pnpm run prisma:migrate
 
 # Background job (optional): auto-close "resolved" tickets after N days
-npm run jobs:autoClose
+pnpm run jobs:autoClose
 ```
 
 ---
@@ -163,7 +166,7 @@ npm run jobs:autoClose
 ## Testing
 
 ```bash
-npx vitest run
+pnpm vitest run
 ```
 
 ---

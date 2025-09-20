@@ -5,7 +5,6 @@
 
 import { resend } from "@/lib/email/resend";
 import { EMAIL_FROM, ADMIN_EMAIL } from "@/lib/email/resend";
-import { logger } from "@/lib/logger";
 import {
   renderTicketCreatedEmail,
   renderCommentAddedEmail,

@@ -5,7 +5,6 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { EMAIL_FROM, resend } from "./resend";
-import { logger } from "@/lib/logger";
 
 /**
  * Prevents duplicate notifications by checking if one was sent in the last minute

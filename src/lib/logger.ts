@@ -23,12 +23,6 @@ class Logger {
     }
 
     const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      level,
-      message,
-      ...context,
-    };
 
     // Use appropriate console method
     switch (level) {

@@ -4,7 +4,6 @@
  */
 
 import { minio, minioExternal, BUCKET, ensureBucket } from "./minio";
-import { logger } from "@/lib/logger";
 
 /**
  * Generates a presigned URL for file upload

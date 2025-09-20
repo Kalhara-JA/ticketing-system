@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { authClient } from "@/lib/auth/client";
 import { useToast } from "@/components/Toast";
@@ -113,7 +113,7 @@ export default function LoginPage() {
           disabled={isSubmitting} 
           className="btn btn-primary btn-md w-full"
         >
-          {isSubmitting ? "Signing in..." : "Sign in"}
+          {isSubmitting ? "Signing in..." : "Continue"}
         </button>
 
 

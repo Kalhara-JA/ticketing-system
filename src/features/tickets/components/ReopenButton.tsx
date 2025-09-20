@@ -4,7 +4,7 @@
  */
 
 "use client";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { reopenTicketAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";

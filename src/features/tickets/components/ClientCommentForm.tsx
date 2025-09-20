@@ -8,7 +8,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { CommentInput } from "@/lib/validation/ticketSchemas";
 import { addCommentAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
