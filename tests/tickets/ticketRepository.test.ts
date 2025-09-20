@@ -324,7 +324,7 @@ describe("ticketRepository", () => {
         select: {
           id: true, title: true, body: true, status: true, priority: true,
           createdAt: true, resolvedAt: true,
-          attachments: { select: { id: true, filename: true } },
+          attachments: { select: { id: true, filename: true, uploadedById: true } },
           comments: {
             orderBy: { createdAt: "asc" },
             select: {
@@ -400,7 +400,7 @@ describe("ticketRepository", () => {
           attachments: { 
             select: { 
               id: true, filename: true, key: true, size: true, 
-              contentType: true, createdAt: true 
+              contentType: true, createdAt: true, uploadedById: true
             } 
           },
           comments: {

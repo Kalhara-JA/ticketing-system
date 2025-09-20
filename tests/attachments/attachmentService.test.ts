@@ -89,7 +89,7 @@ describe("attachmentService", () => {
         user: mockUser,
         ticketId: "t1",
         files,
-      })).rejects.toThrow("Forbidden");
+      })).rejects.toThrow("You don't have permission to add attachments to this ticket.");
     });
 
     it("rejects invalid attachment keys for non-admin users", async () => {
@@ -103,7 +103,7 @@ describe("attachmentService", () => {
         user: mockUser,
         ticketId: "t1",
         files,
-      })).rejects.toThrow("Invalid key");
+      })).rejects.toThrow("Invalid attachment key. Please try uploading again.");
     });
 
     it("enforces 5 attachment limit per ticket", async () => {
@@ -120,7 +120,7 @@ describe("attachmentService", () => {
         user: mockUser,
         ticketId: "t1",
         files,
-      })).rejects.toThrow("Too many attachments");
+      })).rejects.toThrow("Maximum 5 attachments allowed. You currently have 4 attachments and are trying to add 2 more.");
     });
 
     it("allows exactly 5 attachments", async () => {
@@ -232,7 +232,7 @@ describe("attachmentService", () => {
       await expect(attachmentService.remove({
         user: mockUser,
         attachmentId: "a1",
-      })).rejects.toThrow("Forbidden");
+      })).rejects.toThrow("You don't have permission to remove this attachment.");
     });
 
     it("allows ticket owner to remove attachment uploaded by someone else from their ticket", async () => {
@@ -260,7 +260,7 @@ describe("attachmentService", () => {
       await expect(attachmentService.remove({
         user: mockUser,
         attachmentId: "nonexistent",
-      })).rejects.toThrow("Not found");
+      })).rejects.toThrow("Attachment not found.");
     });
 
     it("handles IP address in audit log", async () => {
