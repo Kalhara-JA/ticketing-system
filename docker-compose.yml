@@ -1,8 +1,6 @@
-version: "3.9"
-
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: ticketing-db
     restart: unless-stopped
     environment:
@@ -21,7 +19,7 @@ services:
       start_period: 15s
 
   minio:
-    image: minio/minio:RELEASE.2024-10-13T01-28-43Z
+    image: minio/minio:latest
     container_name: ticketing-minio
     command: server /data --console-address ":9001"
     restart: unless-stopped

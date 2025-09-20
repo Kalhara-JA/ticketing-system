@@ -8,18 +8,38 @@ const accessKey = process.env.MINIO_ACCESS_KEY!;
 const secretKey = process.env.MINIO_SECRET_KEY!;
 export const BUCKET = process.env.MINIO_BUCKET!;
 
-export const minio = new Client({ endPoint, port, useSSL, accessKey, secretKey, region: "us-east-1" });
+// Lazy initialization to avoid errors during build time when env vars are not available
+let _minio: Client | null = null;
+
+function getMinioClient(): Client {
+  if (!_minio) {
+    // Check if we have the required environment variables
+    if (!endPoint || !accessKey || !secretKey || !BUCKET) {
+      throw new Error("MinIO configuration is incomplete. Required environment variables: MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET");
+    }
+    _minio = new Client({ endPoint, port, useSSL, accessKey, secretKey, region: "us-east-1" });
+  }
+  return _minio;
+}
+
+export const minio = new Proxy({} as Client, {
+  get(target, prop) {
+    return getMinioClient()[prop as keyof Client];
+  }
+});
 
 // Basic verification logs (non-sensitive)
 if (process.env.NODE_ENV !== "production") {
-  // Do not log credentials
-  console.log("[minio] Initialized client", {
-    endPoint,
-    port,
-    useSSL,
-    bucket: BUCKET,
-    region: "us-east-1",
-  });
+  // Do not log credentials - only log if we have the required env vars
+  if (endPoint && accessKey && secretKey && BUCKET) {
+    console.log("[minio] Client will be initialized with", {
+      endPoint,
+      port,
+      useSSL,
+      bucket: BUCKET,
+      region: "us-east-1",
+    });
+  }
 }
 
 export async function ensureBucket() {

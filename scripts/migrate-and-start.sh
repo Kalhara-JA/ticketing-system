@@ -9,17 +9,26 @@ DB_NAME="${DB_NAME:-tickets}"
 
 # Allow override via DATABASE_URL if provided
 if [[ -n "${DATABASE_URL:-}" ]]; then
-  # Best effort wait using pg_isready; if DATABASE_URL host is unreachable it still retries
-  until pg_isready -d "$DATABASE_URL" -t 5; do
-    echo "[BOOT] Postgres not ready yet, retrying..."
-    sleep 2
-  done
-else
-  until pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -t 5; do
-    echo "[BOOT] Postgres not ready yet, retrying..."
-    sleep 2
-  done
+  # Extract host, port, user, and database from DATABASE_URL for pg_isready
+  # Format: postgresql://user:password@host:port/database?schema=public
+  DB_URL_HOST=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
+  DB_URL_PORT=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+  DB_URL_USER=$(echo "$DATABASE_URL" | sed -n 's/.*:\/\/\([^:]*\):.*/\1/p')
+  DB_URL_NAME=$(echo "$DATABASE_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+  
+  # Use extracted values or fallback to defaults
+  DB_HOST="${DB_URL_HOST:-$DB_HOST}"
+  DB_USER="${DB_URL_USER:-$DB_USER}"
+  DB_NAME="${DB_URL_NAME:-$DB_NAME}"
+  if [[ -n "$DB_URL_PORT" ]]; then
+    DB_PORT="$DB_URL_PORT"
+  fi
 fi
+
+until pg_isready -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -t 5; do
+  echo "[BOOT] Postgres not ready yet, retrying..."
+  sleep 2
+done
 echo "[BOOT] Database is ready."
 
 echo "[BOOT] Running Prisma migrations..."

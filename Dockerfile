@@ -18,6 +18,15 @@ WORKDIR /app
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
+# After corepack enable in base:
+RUN corepack prepare pnpm@10.17.0 --activate
+
+# In deps stage, before install:
+RUN pnpm config set network-timeout 600000 \
+ && pnpm config set fetch-retries 5 \
+ && pnpm config set fetch-retry-factor 2 \
+ && pnpm config set fetch-retry-maxtimeout 120000
+
 # Use BuildKit cache for the pnpm store so subsequent builds are fast
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
@@ -59,9 +68,8 @@ COPY --from=builder /app/public ./public
 # --- Prisma schema, generated client, and engines
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/generated ./generated
-# Prisma engines used by the generated client live under node_modules/.prisma and @prisma
+# Prisma engines used by the generated client live under @prisma
 # Copy only what's needed to keep the runtime small but functional
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # --- App scripts
