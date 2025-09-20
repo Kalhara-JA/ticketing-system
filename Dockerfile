@@ -58,9 +58,12 @@ RUN pnpm run build
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PNPM_HOME="/pnpm"
+ENV PATH="${PNPM_HOME}:$PATH"
 WORKDIR /app
 
-RUN apk add --no-cache libc6-compat openssl bash postgresql-client curl
+RUN apk add --no-cache libc6-compat openssl bash postgresql-client curl \
+  && corepack enable
 
 # --- Next.js standalone server + static assets
 COPY --from=builder /app/.next/standalone ./
@@ -74,6 +77,13 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # --- App scripts (e.g., maintenance jobs)
 COPY --from=builder /app/scripts ./scripts
+
+# --- Source files needed for seed script
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/node_modules ./node_modules
 
 # Unprivileged user
 RUN addgroup -S nextjs -g 1001 \

@@ -21,6 +21,11 @@
    # Build and start all services
    docker compose up --build
    ```
+   
+   The deployment process includes:
+   - Database setup and migrations
+   - **Automatic admin user creation** (using ADMIN_EMAIL, ADMIN_PASSWORD, etc.)
+   - Application startup
 
 3. **Verify deployment:**
    ```bash
@@ -39,6 +44,15 @@
 - **MinIO Console**: http://localhost:9001 (admin/minioadmin)
 - **Database**: localhost:5432 (postgres/postgres)
 
+### Admin User Setup
+The system automatically creates an admin user during deployment using the environment variables:
+- `ADMIN_EMAIL`: Admin user's email address
+- `ADMIN_PASSWORD`: Admin user's password (default: `Admin123!`)
+- `ADMIN_NAME`: Admin user's display name (default: `System Administrator`)
+- `ADMIN_USERNAME`: Admin user's username (default: `admin`)
+
+You can log in to the application using these credentials immediately after deployment.
+
 ## ⚙️ Environment Variables
 
 Create a `.env` file with the following required variables:
@@ -54,7 +68,12 @@ BETTER_AUTH_URL=http://localhost:3000
 # Email (Resend)
 RESEND_API_KEY=your-resend-api-key
 EMAIL_FROM=noreply@yourdomain.com
+
+# Admin User (automatically seeded on first run)
 ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=Admin123!
+ADMIN_NAME=System Administrator
+ADMIN_USERNAME=admin
 
 # MinIO Storage
 MINIO_ENDPOINT=minio
@@ -86,7 +105,12 @@ BETTER_AUTH_SECRET=your-production-secret-key
 # Production email
 RESEND_API_KEY=your-production-resend-key
 EMAIL_FROM=noreply@yourdomain.com
+
+# Production admin user
 ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your-secure-admin-password
+ADMIN_NAME=System Administrator
+ADMIN_USERNAME=admin
 
 # Production storage (optional: use AWS S3)
 MINIO_ENDPOINT=your-s3-endpoint
@@ -247,7 +271,12 @@ BETTER_AUTH_SECRET=your-very-long-random-secret-key
 # Email configuration
 RESEND_API_KEY=your-production-resend-key
 EMAIL_FROM=noreply@yourdomain.com
+
+# Admin user configuration
 ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your-secure-admin-password
+ADMIN_NAME=System Administrator
+ADMIN_USERNAME=admin
 
 # Storage (use AWS S3 for production)
 MINIO_ENDPOINT=s3.amazonaws.com

@@ -56,6 +56,28 @@ services:
     command: bash -lc "npx prisma migrate deploy"
     restart: "no"
 
+  # One-shot admin seeding job; runs after migrations
+  seed-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: ticketing-seed-admin
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+      ADMIN_NAME: ${ADMIN_NAME:-System Administrator}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+    command: bash -lc "pnpm run seed:admin"
+    restart: "no"
+
   app:
     build:
       context: .
@@ -68,6 +90,8 @@ services:
       minio:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      seed-admin:
         condition: service_completed_successfully
     env_file:
       - .env
@@ -112,6 +136,8 @@ services:
       db:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      seed-admin:
         condition: service_completed_successfully
     command: bash -lc "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
     env_file:

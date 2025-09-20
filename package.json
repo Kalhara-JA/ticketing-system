@@ -12,7 +12,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev",
-    "jobs:autoClose": "node scripts/auto-close-resolved.mjs"
+    "jobs:autoClose": "node scripts/auto-close-resolved.mjs",
+    "seed:admin": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -42,6 +43,7 @@
     "jsdom": "^27.0.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.9"
