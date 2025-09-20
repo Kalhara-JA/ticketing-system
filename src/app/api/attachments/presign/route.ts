@@ -1,30 +1,57 @@
+/**
+ * @fileoverview src/app/api/attachments/presign/route.ts
+ * API route for generating presigned URLs for file uploads
+ */
+
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { presignUpload } from "@/lib/storage/presign";
 import { getSession } from "@/lib/auth/session";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES } from "@/lib/validation/constants";
+import { logger } from "@/lib/logger";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
+/**
+ * Generates a presigned URL for secure file upload to MinIO storage
+ * @param {Request} req - HTTP request containing file metadata
+ * @returns {Promise<NextResponse>} JSON response with presigned URL and storage key
+ * @throws {Error} When authentication fails or file validation fails
+ */
 export async function POST(req: Request) {
     const session = await getSession();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { filename, contentType, size } = await req.json().catch(() => ({}));
-    if (typeof filename !== "string" || !filename.trim()) {
-        return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
-    }
-    if (!ATTACHMENT_ALLOWED_TYPES.includes(contentType)) {
-        return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
-    }
-    if (typeof size !== "number" || size <= 0 || size > ATTACHMENT_MAX_BYTES) {
-        return NextResponse.json({ error: "File too large" }, { status: 400 });
+    if (!session) {
+        logger.error("Unauthorized presign request", {
+            endpoint: "/api/attachments/presign",
+        });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ext = filename.includes(".") ? filename.split(".").pop() : "bin";
-    const key = `u/${session.user.id}/incoming/${randomUUID()}.${ext}`;
-    const url = await presignUpload(key, 15 * 60); // 15 minutes
-    return NextResponse.json({ url, key });
+    try {
+        const { filename, contentType, size } = await req.json().catch(() => ({}));
+
+        // Validate file metadata
+        if (typeof filename !== "string" || !filename.trim()) {
+            return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+        }
+        if (!ATTACHMENT_ALLOWED_TYPES.includes(contentType)) {
+            return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+        }
+        if (typeof size !== "number" || size <= 0 || size > ATTACHMENT_MAX_BYTES) {
+            return NextResponse.json({ error: "File too large" }, { status: 400 });
+        }
+
+        // Generate secure storage key with user isolation
+        const ext = filename.includes(".") ? filename.split(".").pop() : "bin";
+        const key = `u/${session.user.id}/incoming/${randomUUID()}.${ext}`;
+        
+        // Create presigned URL with 15-minute expiry
+        const url = await presignUpload(key, 15 * 60);
+
+        return NextResponse.json({ url, key });
+    } catch (error) {
+        logger.error("Presign request failed", {
+            userId: session.user.id,
+            error: error instanceof Error ? error.message : "Unknown error",
+        });
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
 }

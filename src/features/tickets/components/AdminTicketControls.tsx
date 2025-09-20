@@ -1,8 +1,14 @@
+/**
+ * @fileoverview src/features/tickets/components/AdminTicketControls.tsx
+ * Admin ticket controls for status and priority updates with optimistic UI
+ */
+
 "use client";
 
 import { useTransition, useState } from "react";
 import { updateTicketPriorityAction, updateTicketStatusAction } from "@/features/tickets/actions/adminTicket";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 import type { $Enums } from "../../../../generated/prisma";
 
 const statuses = ["new", "in_progress", "waiting_on_user", "resolved", "closed", "reopened"] as const;
@@ -13,16 +19,16 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
     const [status, setStatus] = useState<$Enums.TicketStatus>(currentStatus);
     const [priority, setPriority] = useState<$Enums.Priority>(currentPriority);
     const [open, setOpen] = useState(false);
-    const [msg, setMsg] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const { addToast } = useToast();
 
     const hasChanges = status !== currentStatus || priority !== currentPriority;
 
     const saveAll = async () => {
         if (!hasChanges) { setOpen(false); return; }
-        setMsg(null);
         try {
+            // Business logic: Batch update status and priority with optimistic UI
             await Promise.all([
                 status !== currentStatus
                     ? updateTicketStatusAction(ticketId, status)
@@ -31,10 +37,19 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
                     ? updateTicketPriorityAction(ticketId, priority)
                     : Promise.resolve(),
             ]);
+            addToast({
+                type: "success",
+                title: "Ticket updated",
+                message: "Ticket status and priority have been successfully updated."
+            });
             startTransition(() => router.refresh());
             setOpen(false);
         } catch (e: unknown) {
-            setMsg(e instanceof Error ? e.message : "Failed to save changes");
+            addToast({
+                type: "error",
+                title: "Failed to update ticket",
+                message: e instanceof Error ? e.message : "An unexpected error occurred."
+            });
         }
     };
 
@@ -79,7 +94,6 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
                             </select>
                         </div>
 
-                        {msg && <p className="text-sm text-red-600">{msg}</p>}
 
                         <div className="flex items-center justify-end gap-2 pt-1">
                             <button

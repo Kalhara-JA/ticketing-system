@@ -1,6 +1,12 @@
+/**
+ * @fileoverview src/app/layout.tsx
+ * Root layout with fonts, global styles, and toast provider
+ */
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +33,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
-        <main className="mx-auto max-w-5xl p-6">{children}</main>
+        <ToastProvider>
+          <main className="mx-auto max-w-5xl p-6">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   );

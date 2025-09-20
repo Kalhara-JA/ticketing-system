@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/admin/tickets/[id]/page.tsx
+ * Admin ticket detail page with full access controls and management features
+ */
+
 import { requireAdmin } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm"; // reuse
@@ -17,7 +22,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
     const ticket = await getAdminTicketDetail(id);
     if (!ticket) return notFound();
 
-    const attachments = ticket.attachments.map(a => ({ id: a.id, filename: a.filename }));
+    const attachments = ticket.attachments.map(a => ({ id: a.id, filename: a.filename, uploadedById: a.uploadedById }));
 
     return (
         <div className="container mx-auto space-y-6 p-6">
@@ -38,7 +43,7 @@ export default async function AdminTicketDetailPage({ params }: { params: Promis
                 </div>
             </div>
 
-            <TicketAttachments items={attachments} after={<ClientAttachmentAdder ticketId={ticket.id} />} />
+            <TicketAttachments items={attachments} after={<ClientAttachmentAdder ticketId={ticket.id} />} canDelete />
 
             <TicketComments
                 comments={ticket.comments}

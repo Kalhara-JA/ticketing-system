@@ -3,88 +3,96 @@
 ## 🐳 Docker Deployment
 
 ### Prerequisites
-- Docker and Docker Compose
+- Docker and Docker Compose installed
 - Environment variables configured
 
 ### Quick Deploy
-```bash
-# Build and start services
-docker-compose up -d
 
-# Run database migrations
-docker-compose exec app pnpm db:migrate
+1. **Clone and setup:**
+   ```bash
+   git clone <repository-url>
+   cd ticketing-system
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
-# Verify deployment
-curl http://localhost:3000/api/health
-```
+2. **Deploy the application:**
+   ```bash
+   # Build and start all services
+   docker compose up --build
+   ```
+
+3. **Verify deployment:**
+   ```bash
+   # Check container status
+   docker compose ps
+   
+   # Check application logs
+   docker compose logs app
+   
+   # Test the application
+   curl http://localhost:3000
+   ```
+
+### Access Points
+- **Application**: http://localhost:3000
+- **MinIO Console**: http://localhost:9001 (admin/minioadmin)
+- **Database**: localhost:5432 (postgres/postgres)
 
 ## ⚙️ Environment Variables
 
-Required environment variables:
+Create a `.env` file with the following required variables:
 
 ```bash
 # Database
-DATABASE_URL="postgresql://postgres:password@postgres:5432/ticketing_system"
+DATABASE_URL=postgresql://postgres:postgres@db:5432/tickets?schema=public
 
 # Authentication
-BETTER_AUTH_SECRET="your-secret-key"
-BETTER_AUTH_URL="https://yourdomain.com"
+BETTER_AUTH_SECRET=your-long-random-secret-key
+BETTER_AUTH_URL=http://localhost:3000
 
-# File Storage
-MINIO_ENDPOINT="minio"
-MINIO_ACCESS_KEY="minioadmin"
-MINIO_SECRET_KEY="minioadmin"
-MINIO_BUCKET="attachments"
+# Email (Resend)
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM=noreply@yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
 
-# Email
-RESEND_API_KEY="your-resend-key"
-ADMIN_EMAIL="admin@yourdomain.com"
-EMAIL_FROM="noreply@yourdomain.com"
+# MinIO Storage
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=ticket-attachments
 
 # Application
-NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+APP_URL=http://localhost:3000
+AUTO_CLOSE_DAYS=14
 ```
 
 ## 🏗️ Production Setup
 
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      # ... other environment variables
-    depends_on:
-      - postgres
-      - minio
+### Environment Configuration
 
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: ticketing_system
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+For production deployment, update the following variables:
 
-  minio:
-    image: minio/minio
-    command: server /data
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    volumes:
-      - minio_data:/data
+```bash
+# Production URLs
+APP_URL=https://yourdomain.com
+BETTER_AUTH_URL=https://yourdomain.com
 
-volumes:
-  postgres_data:
-  minio_data:
+# Secure secrets
+BETTER_AUTH_SECRET=your-production-secret-key
+
+# Production email
+RESEND_API_KEY=your-production-resend-key
+EMAIL_FROM=noreply@yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
+
+# Production storage (optional: use AWS S3)
+MINIO_ENDPOINT=your-s3-endpoint
+MINIO_ACCESS_KEY=your-s3-access-key
+MINIO_SECRET_KEY=your-s3-secret-key
+MINIO_BUCKET=your-production-bucket
 ```
 
 ## 🔒 Security
@@ -99,39 +107,203 @@ volumes:
 - Enable SSL connections
 - Regular backups
 
+### Application Security
+- Change default MinIO credentials
+- Use strong `BETTER_AUTH_SECRET`
+- Verify email domains with Resend
+- Set up proper CORS policies
+
 ## 📊 Monitoring
 
 ### Health Checks
-- `GET /api/health` - Application health
-- Database connectivity
-- File storage access
-- Email service status
+```bash
+# Check application status
+curl http://localhost:3000
+
+# Check container health
+docker compose ps
+
+# View application logs
+docker compose logs app
+
+# View database logs
+docker compose logs db
+
+# View MinIO logs
+docker compose logs minio
+```
 
 ### Logs
 ```bash
-# View application logs
-docker-compose logs -f app
+# Follow application logs
+docker compose logs -f app
 
-# View database logs
-docker-compose logs -f postgres
+# Follow all service logs
+docker compose logs -f
+
+# View specific service logs
+docker compose logs --tail=100 app
 ```
 
-## 🔄 Backup
+## 🔄 Backup & Maintenance
 
 ### Database Backup
 ```bash
 # Create backup
-docker-compose exec postgres pg_dump -U postgres ticketing_system > backup.sql
+docker compose exec db pg_dump -U postgres tickets > backup-$(date +%Y%m%d).sql
 
 # Restore backup
-docker-compose exec -T postgres psql -U postgres ticketing_system < backup.sql
+docker compose exec -T db psql -U postgres tickets < backup-20250920.sql
 ```
 
-### File Backup
+### File Storage Backup
 ```bash
-# Backup MinIO data
-docker-compose exec minio mc mirror /data /backup/
+# Backup MinIO data (if using local MinIO)
+docker compose exec minio mc mirror /data /backup/
+
+# For AWS S3, use AWS CLI or S3 sync tools
 ```
+
+### Updates
+```bash
+# Pull latest changes
+git pull origin main
+
+# Rebuild and restart services
+docker compose down
+docker compose up -d --build
+
+# Check status
+docker compose ps
+```
+
+## 🚀 Production Deployment
+
+### Using Docker Compose
+
+1. **Server Setup:**
+   ```bash
+   # Install Docker and Docker Compose
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sh get-docker.sh
+   
+   # Install Docker Compose
+   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+   sudo chmod +x /usr/local/bin/docker-compose
+   ```
+
+2. **Deploy Application:**
+   ```bash
+   # Clone repository
+   git clone <repository-url>
+   cd ticketing-system
+   
+   # Configure environment
+   cp .env.example .env
+   nano .env  # Edit with production values
+   
+   # Deploy
+   docker compose up -d --build
+   ```
+
+3. **Setup Reverse Proxy (Nginx):**
+   ```nginx
+   server {
+       listen 80;
+       server_name yourdomain.com;
+       return 301 https://$server_name$request_uri;
+   }
+   
+   server {
+       listen 443 ssl;
+       server_name yourdomain.com;
+       
+       ssl_certificate /path/to/certificate.crt;
+       ssl_certificate_key /path/to/private.key;
+       
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+
+### Environment Variables for Production
+
+```bash
+# Production URLs
+APP_URL=https://yourdomain.com
+BETTER_AUTH_URL=https://yourdomain.com
+
+# Database (use external PostgreSQL for production)
+DATABASE_URL=postgresql://username:password@your-db-host:5432/tickets?schema=public
+
+# Secure authentication
+BETTER_AUTH_SECRET=your-very-long-random-secret-key
+
+# Email configuration
+RESEND_API_KEY=your-production-resend-key
+EMAIL_FROM=noreply@yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
+
+# Storage (use AWS S3 for production)
+MINIO_ENDPOINT=s3.amazonaws.com
+MINIO_PORT=443
+MINIO_SSL=true
+MINIO_ACCESS_KEY=your-aws-access-key
+MINIO_SECRET_KEY=your-aws-secret-key
+MINIO_BUCKET=your-production-bucket
+
+# Auto-close configuration
+AUTO_CLOSE_DAYS=14
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Application won't start:**
+   ```bash
+   # Check logs
+   docker compose logs app
+   
+   # Check database connection
+   docker compose exec app pg_isready -h db -p 5432
+   ```
+
+2. **Database connection issues:**
+   ```bash
+   # Check database status
+   docker compose ps db
+   
+   # Check database logs
+   docker compose logs db
+   ```
+
+3. **File upload issues:**
+   ```bash
+   # Check MinIO status
+   docker compose ps minio
+   
+   # Access MinIO console
+   # http://localhost:9001 (admin/minioadmin)
+   ```
+
+4. **Email not working:**
+   - Verify Resend API key
+   - Check domain verification in Resend dashboard
+   - Review email logs in application
+
+### Performance Optimization
+
+- Use external PostgreSQL database for production
+- Configure Redis for session storage
+- Set up CDN for static assets
+- Use AWS S3 or similar for file storage
+- Configure proper caching headers
 
 ---
 

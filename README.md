@@ -63,7 +63,7 @@ scripts/
 
 ## Requirements
 
-* Node.js 18+ (Node 20 recommended)
+* Node.js 20+ (Node 20 recommended)
 * PostgreSQL 14+ (the migration enables `pg_trgm`)
 * MinIO or S3-compatible storage
 * Resend API key (email)
@@ -168,151 +168,89 @@ npx vitest run
 
 ---
 
-## Production (Docker)
+## Production Deployment
 
-You can run the app with the **Dockerfile** below (multi-stage, production).
-The container will: **run migrations on start** and then `next start`.
+### Prerequisites
 
-### Dockerfile
+- Docker and Docker Compose installed
+- Environment variables configured (see Environment Variables section)
 
-```dockerfile
-# syntax=docker/dockerfile:1.6
+### Quick Deploy with Docker Compose
 
-############################
-# Base image
-############################
-FROM node:20-alpine AS base
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-WORKDIR /app
-# prisma engines need OpenSSL; next/sharp is fine on alpine
-RUN apk add --no-cache libc6-compat openssl
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd ticketing-system
+   ```
 
-############################
-# Dependencies
-############################
-FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN pnpm ci
+2. **Create environment file:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
-############################
-# Build
-############################
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-# Compose Prisma schema & generate client for build
-RUN pnpm run prisma:generate
-# Build Next.js
-RUN pnpm run build
+3. **Deploy the application:**
+   ```bash
+   # Build and start all services
+   docker compose up --build
+   ```
 
-############################
-# Runtime
-############################
-FROM base AS runner
-WORKDIR /app
+4. **Verify deployment:**
+   ```bash
+   # Check container status
+   docker compose ps
+   
+   # Check application logs
+   docker compose logs app
+   
+   # Test the application
+   curl http://localhost:3000
+   ```
 
-# Copy only what we need at runtime
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/scripts ./scripts
-COPY --from=deps /app/node_modules ./node_modules
+### Access Points
 
-EXPOSE 3000
-# Run DB migrations, then start Next
-CMD ["sh", "-c", "pnpm run prisma migrate deploy && next start -p 3000"]
-```
+- **Application**: http://localhost:3000
+- **MinIO Console**: http://localhost:9001 (admin/minioadmin)
+- **Database**: localhost:5432 (postgres/postgres)
 
-> Notes
->
-> * The Docker build runs `prisma generate` (using your split-schema builder script).
-> * Migrations run at **container start** (`migrate deploy`) so new envs self-update.
-> * If you use Next’s `output: 'standalone'`, you can shrink the runtime image further by copying `.next/standalone` + `.next/static` and only the `public/` + `prisma/` folders. The above is the simpler, reliable pattern.
+### Environment Variables
 
----
-
-## Optional: docker-compose (dev or quick demo)
-
-```yaml
-version: "3.9"
-services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: tickets
-    ports:
-      - "5432:5432"
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Console
-    volumes:
-      - miniodata:/data
-
-  app:
-    build: .
-    depends_on:
-      - db
-      - minio
-    environment:
-      APP_URL: http://localhost:3000
-      AUTH_SECRET: replace-with-a-long-random-string
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
-      RESEND_API_KEY: replace-me
-      ADMIN_EMAIL: admin@example.com
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_SSL: "false"
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: ticket-attachments
-      AUTO_CLOSE_DAYS: 14
-    ports:
-      - "3000:3000"
-
-  # Optional: run the auto-close job hourly
-  autoclose:
-    build: .
-    depends_on:
-      - db
-    command: sh -c "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
-      RESEND_API_KEY: replace-me
-      APP_URL: http://localhost:3000
-      AUTO_CLOSE_DAYS: 14
-
-volumes:
-  dbdata:
-  miniodata:
-```
-
-**Bring it up:**
+Create a `.env` file with the following variables:
 
 ```bash
-docker compose up --build
+# Database
+DATABASE_URL=postgresql://postgres:postgres@db:5432/tickets?schema=public
+
+# Authentication
+BETTER_AUTH_SECRET=your-long-random-secret-key
+BETTER_AUTH_URL=http://localhost:3000
+
+# Email (Resend)
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM=noreply@yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
+
+# MinIO Storage
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=ticket-attachments
+
+# Application
+APP_URL=http://localhost:3000
+AUTO_CLOSE_DAYS=14
 ```
 
-Then open:
+### Production Considerations
 
-* App: [http://localhost:3000](http://localhost:3000)
-* MinIO Console: [http://localhost:9001](http://localhost:9001) (login: minioadmin / minioadmin)
-  → Create bucket `ticket-attachments` (or run your `ensureBucket()` once).
+- **Security**: Change default passwords and secrets
+- **SSL**: Use HTTPS in production with proper certificates
+- **Domain**: Update `APP_URL` and `BETTER_AUTH_URL` to your production domain
+- **Email**: Verify your domain with Resend and use a proper sender address
+- **Storage**: Configure MinIO with proper access controls or use AWS S3
+- **Backup**: Set up regular database and file backups
 
 ---
 

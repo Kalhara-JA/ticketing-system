@@ -1,5 +1,20 @@
+/**
+ * @fileoverview src/features/audit/auditRepository.ts
+ * Database repository functions for audit log queries with filtering and pagination
+ */
+
 import { prisma } from "@/lib/db/prisma";
 
+/**
+ * Lists audit logs with filtering and pagination
+ * @param {Object} opts - Query options
+ * @param {number} opts.page - Page number (1-based)
+ * @param {number} opts.pageSize - Number of items per page
+ * @param {string} opts.actor - Username or email partial match
+ * @param {string} opts.targetType - Target type filter
+ * @param {string} opts.action - Action filter
+ * @returns {Promise<Object>} Paginated audit log results
+ */
 export async function listAuditLogs(opts: {
   page?: number;
   pageSize?: number;

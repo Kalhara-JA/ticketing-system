@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/(auth)/signup/page.tsx
+ * User registration page with email verification flow
+ */
+
 "use client";
 
 import { z } from "zod";
@@ -8,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { AuthCard } from "@/components/AuthCard";
 import { USERNAME_REGEX } from "@/lib/validation/constants";
+import { useToast } from "@/components/Toast";
 
 const SignUpSchema = z.object({
     email: z.string().email(),
@@ -21,15 +27,14 @@ type FormData = z.infer<typeof SignUpSchema>;
 
 export default function SignUpPage() {
     const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
+    const { addToast } = useToast();
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(SignUpSchema),
     });
 
     const onSubmit = async (data: FormData) => {
-        setError(null);
         try {
-            // Better Auth: sign up with email+password + additional fields
+            // Business logic: sign up with email+password + additional fields
             const res = await authClient.signUp.email({
                 email: data.email,
                 password: data.password,
@@ -38,13 +43,26 @@ export default function SignUpPage() {
                 name: data.name ?? "",
             });
             if (res.error) {
-                setError(res.error.message ?? "Sign up failed");
+                addToast({
+                    type: "error",
+                    title: "Sign up failed",
+                    message: res.error.message ?? "Failed to create account"
+                });
                 return;
             }
-            // They’ll receive a verification email (per Step 3 config).
+            addToast({
+                type: "success",
+                title: "Account created!",
+                message: "Please check your email for a verification link."
+            });
+            // They'll receive a verification email (per Step 3 config).
             router.push("/login?verified=check-email");
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Something went wrong");
+            addToast({
+                type: "error",
+                title: "Sign up failed",
+                message: e instanceof Error ? e.message : "Something went wrong"
+            });
         }
     };
 
@@ -99,11 +117,6 @@ export default function SignUpPage() {
                     {errors.confirm && <p className="text-sm text-red-600">{errors.confirm.message}</p>}
                 </div>
 
-                {error && (
-                    <div className="rounded-md bg-red-50 p-3">
-                        <p className="text-sm text-red-600">{error}</p>
-                    </div>
-                )}
 
                 <button 
                     disabled={isSubmitting} 

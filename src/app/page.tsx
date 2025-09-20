@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/page.tsx
+ * Home page with welcome message and navigation links
+ */
+
 export default function HomePage() {
   return (
     <div className="space-y-3">

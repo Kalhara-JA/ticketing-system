@@ -38,6 +38,24 @@ services:
       retries: 12
       start_period: 15s
 
+  # One-shot migration job; exits after success/failure
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: ticketing-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/tickets?schema=public
+    command: bash -lc "npx prisma migrate deploy"
+    restart: "no"
+
   app:
     build:
       context: .
@@ -49,6 +67,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
@@ -58,6 +78,9 @@ services:
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_SSL: "false"
+      MINIO_EXTERNAL_ENDPOINT: localhost
+      MINIO_EXTERNAL_PORT: 9000
+      MINIO_EXTERNAL_SSL: "false"
       APP_URL: http://localhost:3000
       BETTER_AUTH_URL: http://localhost:3000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
@@ -77,8 +100,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Optional hourly job to auto-close resolved tickets
   autoclose:
-    profiles: ["jobs"]
+    # profiles: ["jobs"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -87,6 +111,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     command: bash -lc "while true; do node scripts/auto-close-resolved.mjs; sleep 3600; done"
     env_file:
       - .env

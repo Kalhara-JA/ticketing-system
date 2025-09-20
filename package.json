@@ -9,9 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:generate": "prisma generate",
     "prisma:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
     "jobs:autoClose": "node scripts/auto-close-resolved.mjs"
   },
   "dependencies": {

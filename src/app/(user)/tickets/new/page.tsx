@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/(user)/tickets/new/page.tsx
+ * New ticket creation page with file upload and validation
+ */
+
 "use client";
 
 import { z } from "zod";
@@ -9,12 +14,13 @@ import Link from "next/link";
 import { CreateTicketInput, AttachmentMeta } from "@/lib/validation/ticketSchemas";
 import { createTicketAction } from "@/features/tickets/actions/createTicket";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_COUNT } from "@/lib/validation/constants";
+import { useToast } from "@/components/Toast";
 
 type FormData = z.infer<typeof CreateTicketInput>;
 
 export default function NewTicketPage() {
     const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
+    const { addToast } = useToast();
     const [uploading, setUploading] = useState(false);
     const [uploads, setUploads] = useState<z.infer<typeof AttachmentMeta>[]>([]);
 
@@ -24,14 +30,18 @@ export default function NewTicketPage() {
         mode: "onChange",
     });
 
-    // Handle file selection -> presign -> upload -> collect meta
+    // Business logic: File validation, presigned URL generation, and upload
     const onFilesPicked = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
-        setError(null);
 
+        // Security: Enforce attachment count limit
         const curr = uploads.length;
         if (curr + files.length > ATTACHMENT_MAX_COUNT) {
-            setError(`You can attach up to ${ATTACHMENT_MAX_COUNT} files.`);
+            addToast({
+                type: "error",
+                title: "Too many files",
+                message: `You can attach up to ${ATTACHMENT_MAX_COUNT} files.`
+            });
             return;
         }
 
@@ -39,25 +49,50 @@ export default function NewTicketPage() {
         try {
             const newMetas: z.infer<typeof AttachmentMeta>[] = [];
             for (const f of Array.from(files)) {
+                // Security: Validate file type and size
                 if (!ATTACHMENT_ALLOWED_TYPES.includes(f.type as "application/pdf" | "image/png" | "image/jpeg")) {
-                    setError(`Unsupported type: ${f.type}`);
+                    addToast({
+                        type: "error",
+                        title: "Unsupported file type",
+                        message: `${f.name} (${f.type}). Please use PDF, PNG, or JPEG files.`
+                    });
                     continue;
                 }
                 if (f.size > ATTACHMENT_MAX_BYTES) {
-                    setError(`File too large: ${f.name}`);
+                    addToast({
+                        type: "error",
+                        title: "File too large",
+                        message: `${f.name} exceeds the maximum size of ${Math.round(ATTACHMENT_MAX_BYTES / 1024 / 1024)}MB.`
+                    });
                     continue;
                 }
 
+                // Security: Get presigned URL for secure upload
                 const r = await fetch("/api/attachments/presign", {
                     method: "POST",
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ filename: f.name, contentType: f.type, size: f.size }),
                 });
                 const json = await r.json();
-                if (!r.ok) { setError(json?.error ?? "Failed to prepare upload"); continue; }
+                if (!r.ok) { 
+                    addToast({
+                        type: "error",
+                        title: "Upload preparation failed",
+                        message: `Failed to prepare upload for ${f.name}: ${json?.error ?? "Unknown error"}`
+                    });
+                    continue; 
+                }
 
+                // Upload file to MinIO using presigned URL
                 const put = await fetch(json.url, { method: "PUT", headers: { "content-type": f.type }, body: f });
-                if (!put.ok) { setError(`Upload failed: ${f.name}`); continue; }
+                if (!put.ok) { 
+                    addToast({
+                        type: "error",
+                        title: "Upload failed",
+                        message: `Failed to upload ${f.name}. Please try again.`
+                    });
+                    continue; 
+                }
 
                 newMetas.push({ name: f.name, key: json.key, size: f.size, contentType: f.type as "application/pdf" | "image/png" | "image/jpeg" });
             }
@@ -65,23 +100,39 @@ export default function NewTicketPage() {
             const next = [...uploads, ...newMetas];
             setUploads(next);
             setValue("attachments", next, { shouldValidate: true, shouldDirty: true });
+            
+            if (newMetas.length > 0) {
+                addToast({
+                    type: "success",
+                    title: "Files uploaded",
+                    message: `Successfully uploaded ${newMetas.length} file${newMetas.length === 1 ? '' : 's'}.`
+                });
+            }
         } finally {
             setUploading(false);
         }
     };
 
     const onSubmit = async (data: FormData) => {
-        setError(null);
         try {
             const res = await createTicketAction({
                 title: data.title,
                 body: data.body,
                 attachments: uploads,
             });
+            addToast({
+                type: "success",
+                title: "Ticket created",
+                message: "Your ticket has been successfully created and submitted."
+            });
             // Minimal success: route to placeholder detail page
             router.push(`/tickets/${res.id}`);
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Failed to create ticket");
+            addToast({
+                type: "error",
+                title: "Failed to create ticket",
+                message: e instanceof Error ? e.message : "An unexpected error occurred."
+            });
         }
     };
 
@@ -150,12 +201,6 @@ export default function NewTicketPage() {
                             </div>
                         )}
                     </div>
-
-                    {error && (
-                        <div className="rounded-md bg-red-50 p-3">
-                            <p className="text-sm text-red-600">{error}</p>
-                        </div>
-                    )}
 
                     <div className="flex gap-3">
                         <button

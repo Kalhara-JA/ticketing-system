@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/admin/tickets/page.tsx
+ * Admin tickets listing page with advanced filtering and search
+ */
+
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { listAllTickets } from "@/features/tickets/repositories/ticketRepository";
@@ -6,6 +11,7 @@ import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
+// Business logic: Parse search parameters with array handling
 function parseParams(sp: { [k: string]: string | string[] | undefined }) {
     const get = (k: string) => (Array.isArray(sp[k]) ? (sp[k] as string[])[0] : sp[k]);
     const getAll = (k: string) => (Array.isArray(sp[k]) ? (sp[k] as string[]) : (sp[k] ? [sp[k] as string] : []));

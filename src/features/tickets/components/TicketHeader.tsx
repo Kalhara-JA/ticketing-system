@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/features/tickets/components/TicketHeader.tsx
+ * Ticket header component with status, priority, and metadata display
+ */
+
 "use client";
 
 export default function TicketHeader({

@@ -1,9 +1,15 @@
+/**
+ * @fileoverview src/app/admin/audit/page.tsx
+ * Admin audit log page with filtering and security event tracking
+ */
+
 import { requireAdmin } from "@/lib/auth/session";
 import { listAuditLogs } from "@/features/audit/auditRepository";
 import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
+// Business logic: Parse search parameters for audit log filtering
 function parseParams(sp: { [k: string]: string | string[] | undefined }) {
   const get = (k: string) => (Array.isArray(sp[k]) ? (sp[k] as string[])[0] : sp[k]);
   return {

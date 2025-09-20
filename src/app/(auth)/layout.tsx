@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/(auth)/layout.tsx
+ * Authentication layout with session redirect logic
+ */
+
 import { getSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 

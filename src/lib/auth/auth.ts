@@ -1,8 +1,14 @@
+/**
+ * @fileoverview src/lib/auth/auth.ts
+ * Better Auth configuration with email verification and password reset
+ */
+
 import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { resend, EMAIL_FROM } from "@/lib/email/resend";
 import { renderAuthEmail } from "@/lib/email/templates";
+import { logger } from "@/lib/logger";
 import { prisma } from "../db/prisma";
 import { USERNAME_REGEX } from "../validation/constants";
 
@@ -63,15 +69,16 @@ export const auth = betterAuth({
 
     // Reset password email
     async sendResetPassword({ user, url }) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[auth] Sending reset password email", { to: user.email, url });
-      }
+      logger.authOperation("reset password email started", user.id, {
+        userEmail: user.email,
+      });
+      
       const html = renderAuthEmail({
         title: "Reset your password",
         intro: `Hi ${user.name ?? "there"},`,
         body: `We received a request to reset your password. If this was you, click the button below.`,
         cta: { label: "Reset Password", url },
-        footer: "If you didn’t request a reset, you can safely ignore this email.",
+        footer: "If you didn't request a reset, you can safely ignore this email.",
       });
       try {
         await resend.emails.send({
@@ -80,11 +87,15 @@ export const auth = betterAuth({
           subject: "Reset your password",
           html,
         });
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[auth] Reset password email queued", { to: user.email });
-        }
+        logger.emailOperation("reset password email sent", user.email, {
+          userId: user.id,
+        });
       } catch (error) {
-        console.error("Failed to send reset password email", { error });
+        logger.error("Failed to send reset password email", {
+          userId: user.id,
+          userEmail: user.email,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
       }
     },
   },
@@ -92,9 +103,10 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[auth] Sending verification email", { to: user.email, url });
-      }
+      logger.authOperation("verification email started", user.id, {
+        userEmail: user.email,
+      });
+      
       const html = renderAuthEmail({
         title: "Verify your email",
         intro: `Welcome ${user.name ?? ""}!`,
@@ -109,11 +121,15 @@ export const auth = betterAuth({
           subject: "Verify your email",
           html,
         });
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[auth] Verification email queued", { to: user.email });
-        }
+        logger.emailOperation("verification email sent", user.email, {
+          userId: user.id,
+        });
       } catch (error) {
-        console.error("Failed to send verification email", { error });
+        logger.error("Failed to send verification email", {
+          userId: user.id,
+          userEmail: user.email,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
       }
     },
   },

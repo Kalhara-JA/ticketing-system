@@ -1,16 +1,24 @@
+/**
+ * @fileoverview src/features/tickets/repositories/ticketRepository.ts
+ * Database repository functions for ticket queries with search, filtering, and pagination
+ */
+
 import { prisma } from "@/lib/db/prisma";
 import { PAGE_SIZE_DEFAULT, TICKET_PRIORITIES, TICKET_STATUSES } from "@/features/tickets/constants";
 import type { $Enums } from "../../../../generated/prisma";
 
+// Base arguments for ticket listing with search and filtering
 type ListArgsBase = {
-    q?: string | null;
-    status?: string[] | null;
-    priority?: string[] | null;
+    q?: string | null;                // search query
+    status?: string[] | null;         // filter by status
+    priority?: string[] | null;       // filter by priority
     page?: number | null;             // page number (1-based)
     pageSize?: number | null;         // page size
 };
 
+// User-specific ticket listing arguments
 export type UserListArgs = ListArgsBase & { userId: string };
+// Admin ticket listing arguments with optional requester filter
 export type AdminListArgs = ListArgsBase & { requester?: string | null };
 
 function buildWhereBase(args: ListArgsBase) {
@@ -130,7 +138,7 @@ export async function getUserTicketDetail(userId: string, ticketId: string) {
             priority: true,
             createdAt: true,
             resolvedAt: true,
-            attachments: { select: { id: true, filename: true } },
+            attachments: { select: { id: true, filename: true, uploadedById: true } },
             comments: {
                 orderBy: { createdAt: "asc" },
                 select: {
@@ -156,7 +164,7 @@ export async function getAdminTicketDetail(ticketId: string) {
             priority: true,
             createdAt: true,
             user: { select: { username: true, email: true } },
-            attachments: { select: { id: true, filename: true, key: true, size: true, contentType: true, createdAt: true } },
+            attachments: { select: { id: true, filename: true, key: true, size: true, contentType: true, createdAt: true, uploadedById: true } },
             comments: {
                 orderBy: { createdAt: "asc" },
                 select: {

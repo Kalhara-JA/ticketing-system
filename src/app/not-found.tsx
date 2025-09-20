@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/not-found.tsx
+ * 404 not found page with navigation back to home
+ */
+
 import Link from "next/link";
 
 export default function NotFound() {

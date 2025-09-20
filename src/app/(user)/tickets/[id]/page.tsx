@@ -1,4 +1,8 @@
-// src/app/(user)/tickets/[id]/page.tsx
+/**
+ * @fileoverview src/app/(user)/tickets/[id]/page.tsx
+ * Ticket detail page with comments, attachments, and reopen functionality
+ */
+
 import { requireUser } from "@/lib/auth/session";
 import { notFound } from "next/navigation";
 import ClientCommentForm from "@/features/tickets/components/ClientCommentForm";
@@ -19,6 +23,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const ticket = await getUserTicketDetail(user.id, id);
   if (!ticket) return notFound();
 
+  // Business logic: Check if ticket can be reopened within time window
   const withinWindow =
     ticket.resolvedAt
       ? (Date.now() - new Date(ticket.resolvedAt).getTime()) / 86_400_000 <= REOPEN_WINDOW_DAYS
@@ -46,8 +51,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
       {/* Attachments */}
       <TicketAttachments
-        items={ticket.attachments.map(a => ({ id: a.id, filename: a.filename }))}
+        items={ticket.attachments.map(a => ({ id: a.id, filename: a.filename, uploadedById: a.uploadedById }))}
         after={<ClientAttachmentAdder ticketId={ticket.id} />}
+        currentUserId={user.id}
       />
 
       {/* Comments */}

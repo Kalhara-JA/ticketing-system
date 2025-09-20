@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/components/TopNav.tsx
+ * Navigation header with role-based menu items and authentication
+ */
+
 import { requireUser } from "@/lib/auth/session";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -46,7 +51,7 @@ export default async function TopNav() {
                         <span className="text-sm text-gray-700">
                             Signed in as <span className="font-medium text-gray-900">{user.username}</span>
                         </span>
-                        {/* Server Action: sign out then redirect to login */}
+                        {/* Security: Server Action sign out then redirect to login */}
                         <form action={async () => {
                             "use server";
                             await auth.api.signOut({ headers: await headers() });

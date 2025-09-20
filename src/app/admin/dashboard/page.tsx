@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/app/admin/dashboard/page.tsx
+ * Admin dashboard with ticket metrics, KPIs, and trend visualization
+ */
+
 import {
     getOpenCount,
     getTotalCount,
@@ -12,6 +17,7 @@ import Link from "next/link";
 
 export const revalidate = 60; // refresh at most once per minute
 
+// Business logic: Convert Map to ordered array for consistent display
 function toPairs<T extends string>(map: Map<T, number>, order: T[]) {
     return order.map((k) => [k, map.get(k) ?? 0] as const);
 }
@@ -147,7 +153,7 @@ function TrendCard({
     title: string;
     series: { day: Date; count: number }[];
 }) {
-    // super lightweight "sparkline": 14 bars scaled by max (no extra libs)
+    // UX: Lightweight sparkline visualization without external dependencies
     const max = Math.max(1, ...series.map((s) => s.count));
     return (
         <div className="card p-6">

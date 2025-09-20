@@ -1,12 +1,18 @@
+/**
+ * @fileoverview src/app/(auth)/login/page.tsx
+ * User login page with email/username resolution and authentication
+ */
+
 "use client";
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { authClient } from "@/lib/auth/client";
+import { useToast } from "@/components/Toast";
 
 const LoginSchema = z.object({
   identifier: z.string().min(3, "Enter your email or username"),
@@ -18,16 +24,26 @@ type FormData = z.infer<typeof LoginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const sp = useSearchParams();
-  const [error, setError] = useState<string | null>(sp.get("verified") ? "Please check your email for a verification link." : null);
+  const { addToast } = useToast();
+
+  // Show verification message on mount if needed
+  useEffect(() => {
+    if (sp.get("verified")) {
+      addToast({
+        type: "info",
+        title: "Check your email",
+        message: "Please check your email for a verification link."
+      });
+    }
+  }, [sp, addToast]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(LoginSchema),
   });
 
   const onSubmit = async (data: FormData) => {
-    setError(null);
     try {
-      // Resolve identifier → email on the server (auth-only helper)
+      // Security: Resolve identifier → email on the server (auth-only helper)
       const r = await fetch("/api/resolve-identifier", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -35,21 +51,38 @@ export default function LoginPage() {
       });
       const json = await r.json();
       if (!r.ok) {
-        setError(json?.error ?? "Login failed");
+        addToast({
+          type: "error",
+          title: "Login failed",
+          message: json?.error ?? "Invalid credentials"
+        });
         return;
       }
       const email: string = json.email;
 
       const res = await authClient.signIn.email({ email, password: data.password });
       if (res.error) {
-        setError(res.error.message ?? "Login failed");
+        addToast({
+          type: "error",
+          title: "Login failed",
+          message: res.error.message ?? "Invalid credentials"
+        });
         return;
       }
 
+      addToast({
+        type: "success",
+        title: "Welcome back!",
+        message: "You have been successfully logged in."
+      });
       router.push("/tickets"); // user default landing
       router.refresh();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      addToast({
+        type: "error",
+        title: "Login failed",
+        message: e instanceof Error ? e.message : "Something went wrong"
+      });
     }
   };
 
@@ -83,11 +116,6 @@ export default function LoginPage() {
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
 
-        {error && (
-          <div className="rounded-md bg-red-50 p-3">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         <p className="text-center text-sm text-gray-600">
           No account? <a className="font-medium text-blue-600 hover:underline" href="/signup">Create one</a>

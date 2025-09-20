@@ -1,3 +1,18 @@
+/**
+ * @fileoverview src/lib/email/templates.tsx
+ * React email template components for authentication and ticket notifications
+ */
+
+/**
+ * Renders a generic authentication email template
+ * @param {Object} opts - Email template options
+ * @param {string} opts.title - Email title
+ * @param {string} opts.intro - Optional introduction text
+ * @param {string} opts.body - Optional body text
+ * @param {Object} opts.cta - Optional call-to-action button
+ * @param {string} opts.footer - Optional footer text
+ * @returns {string} HTML email content
+ */
 export function renderAuthEmail(opts: {
     title: string;
     intro?: string;

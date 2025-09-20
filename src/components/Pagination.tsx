@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/components/Pagination.tsx
+ * Pagination component with smart page range calculation and ellipsis
+ */
+
 import Link from "next/link";
 
 interface PaginationProps {
@@ -26,6 +31,7 @@ export default function Pagination({
     };
 
     const getVisiblePages = () => {
+        // Business logic: Smart page range calculation with ellipsis
         const delta = 2; // Number of pages to show on each side of current page
         const range = [];
         const rangeWithDots = [];

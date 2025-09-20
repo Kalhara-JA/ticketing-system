@@ -1,6 +1,11 @@
+/**
+ * @fileoverview src/features/tickets/repositories/metricsRepository.ts
+ * Database repository functions for ticket metrics, analytics, and full-text search
+ */
+
 import { prisma } from "@/lib/db/prisma";
 
-// Helpful union types (already defined in constants, import if you prefer)
+// Ticket status and priority types for metrics
 type Status =
     | "new"
     | "in_progress"
@@ -11,6 +16,10 @@ type Status =
 
 type Priority = "low" | "normal" | "high" | "urgent";
 
+/**
+ * Gets count of tickets grouped by status
+ * @returns {Promise<Map<Status, number>>} Map of status to count
+ */
 export async function getStatusCounts() {
     const rows = await prisma.ticket.groupBy({
         by: ["status"],
@@ -21,6 +30,10 @@ export async function getStatusCounts() {
     return map;
 }
 
+/**
+ * Gets count of tickets grouped by priority
+ * @returns {Promise<Map<Priority, number>>} Map of priority to count
+ */
 export async function getPriorityCounts() {
     const rows = await prisma.ticket.groupBy({
         by: ["priority"],
@@ -31,7 +44,10 @@ export async function getPriorityCounts() {
     return map;
 }
 
-// Open = not closed & not resolved (tweak if your definition differs)
+/**
+ * Gets count of open tickets (not resolved or closed)
+ * @returns {Promise<number>} Count of open tickets
+ */
 export async function getOpenCount() {
     const count = await prisma.ticket.count({
         where: { NOT: { status: { in: ["resolved", "closed"] } } },
@@ -39,13 +55,21 @@ export async function getOpenCount() {
     return count;
 }
 
+/**
+ * Gets total count of all tickets
+ * @returns {Promise<number>} Total ticket count
+ */
 export async function getTotalCount() {
     return prisma.ticket.count();
 }
 
-// 14-day trend: tickets created per day
+/**
+ * Gets daily ticket creation trend for the specified number of days
+ * @param {number} days - Number of days to look back (default: 14)
+ * @returns {Promise<Array<{day: Date, count: number}>>} Array of daily counts
+ */
 export async function getDailyOpened(days = 14) {
-    // Postgres only; adjust if you use SQLite for dev
+    // PostgreSQL-specific query for daily aggregation
     const rows = await prisma.$queryRaw<
         { day: Date; count: bigint }[]
     >`
@@ -58,7 +82,11 @@ export async function getDailyOpened(days = 14) {
     return rows.map((r) => ({ day: new Date(r.day), count: Number(r.count) }));
 }
 
-// 14-day trend: tickets resolved per day
+/**
+ * Gets daily ticket resolution trend for the specified number of days
+ * @param {number} days - Number of days to look back (default: 14)
+ * @returns {Promise<Array<{day: Date, count: number}>>} Array of daily resolution counts
+ */
 export async function getDailyResolved(days = 14) {
     const rows = await prisma.$queryRaw<
         { day: Date; count: bigint }[]
@@ -73,7 +101,10 @@ export async function getDailyResolved(days = 14) {
     return rows.map((r) => ({ day: new Date(r.day), count: Number(r.count) }));
 }
 
-// Average resolution time (in hours) for tickets that have resolvedAt
+/**
+ * Gets average resolution time in hours for resolved tickets
+ * @returns {Promise<number | null>} Average resolution time in hours, or null if no resolved tickets
+ */
 export async function getAvgResolutionHours() {
     const rows = await prisma.$queryRaw<{ hours: number }[]>`
     SELECT EXTRACT(EPOCH FROM AVG("resolvedAt" - "createdAt")) / 3600 AS hours
@@ -83,8 +114,12 @@ export async function getAvgResolutionHours() {
     return rows[0]?.hours ?? null;
 }
 
-// Optional: basic ranked FTS search snippet (title+body)
-// Use later in lists if you want ranked results (instead of contains)
+/**
+ * Full-text search for tickets using PostgreSQL's tsvector and tsquery
+ * @param {string} query - Search query string
+ * @param {number} limit - Maximum number of results (default: 20)
+ * @returns {Promise<Array<{id: string, title: string, rank: number}>>} Ranked search results
+ */
 export async function searchTicketsFTS(query: string, limit = 20) {
     if (!query?.trim()) return [];
     const rows = await prisma.$queryRaw<

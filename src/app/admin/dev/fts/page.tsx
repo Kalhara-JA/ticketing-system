@@ -1,4 +1,8 @@
-// src/app/admin/dev/fts/page.tsx
+/**
+ * @fileoverview src/app/admin/dev/fts/page.tsx
+ * Development page for testing full-text search functionality
+ */
+
 import { requireAdmin } from "@/lib/auth/session";
 import { searchTicketsFTS } from "@/features/tickets/repositories/metricsRepository";
 

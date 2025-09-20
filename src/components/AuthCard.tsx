@@ -1,3 +1,8 @@
+/**
+ * @fileoverview src/components/AuthCard.tsx
+ * Reusable authentication card component with dynamic messaging
+ */
+
 "use client";
 
 import React from "react";

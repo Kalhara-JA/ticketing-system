@@ -7,11 +7,13 @@ Internal Service Request (Ticketing) System - A multi-user service request manag
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
+
+- Node.js 20+
 - pnpm
 - Docker (for database and MinIO)
 
 ### Setup
+
 ```bash
 # Install dependencies
 pnpm install
@@ -58,4 +60,4 @@ pnpm dev
 
 ---
 
-*Last updated: September 2025*
+_Last updated: September 2025_
