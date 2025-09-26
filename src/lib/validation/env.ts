@@ -76,4 +76,9 @@ export function getEnv() {
 
 export type Env = ReturnType<typeof getEnv>;
 
+// Test helper: allow test setup to refresh env after containers set vars
+export function __resetEnvCacheForTests() {
+  cached = null;
+}
+
 

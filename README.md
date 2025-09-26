@@ -86,7 +86,6 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tickets?schema=publi
 
 # Authentication
 BETTER_AUTH_SECRET="T1OeNmemOXA6jtOUM0x3ZgpoiuUgHcjh"
-BETTER_AUTH_URL="http://localhost:3000"
 
 # Email Configuration
 RESEND_API_KEY="replace-me"
@@ -100,6 +99,12 @@ MINIO_SSL="false"
 MINIO_ACCESS_KEY="minioadmin"
 MINIO_SECRET_KEY="minioadmin"
 MINIO_BUCKET="ticket-attachments"
+
+# MinIO External Configuration (for presigned URLs)
+# These should match MINIO_ENDPOINT/MINIO_PORT in most cases
+MINIO_EXTERNAL_ENDPOINT="localhost"
+MINIO_EXTERNAL_PORT="9000"
+MINIO_EXTERNAL_SSL="false"
 
 ```
 
@@ -153,20 +158,110 @@ Visit:
 ## Scripts
 
 ```bash
-# Prisma helpers (compose schema parts -> schema.prisma, generate client, run migrations)
-pnpm run prisma:generate
-pnpm run prisma:migrate
+# Development
+pnpm dev                    # Start development server
+pnpm build                  # Build for production
+pnpm start                  # Start production server
 
-# Background job (optional): auto-close "resolved" tickets after N days
-pnpm run jobs:autoClose
+# Database
+pnpm prisma:generate        # Generate Prisma client
+pnpm prisma:migrate         # Run database migrations
+pnpm prisma:migrate:deploy  # Deploy migrations (production)
+
+# Testing
+pnpm test                   # Run all tests
+pnpm test:unit             # Run unit tests only (fast)
+pnpm test:integration      # Run integration tests (with containers)
+pnpm test:integration:flow # Run comprehensive integration flow test
+pnpm test:watch            # Run tests in watch mode
+
+# Background jobs
+pnpm jobs:autoClose        # Auto-close resolved tickets after N days
+pnpm seed:admin            # Seed admin user
 ```
 
 ---
 
 ## Testing
 
+### Test Suite Overview
+
+The project includes a comprehensive test suite with both unit and integration tests:
+
+- **Unit Tests**: Fast tests for individual components and functions
+- **Integration Tests**: End-to-end tests with real database and MinIO containers
+
+### Running Tests
+
 ```bash
-pnpm vitest run
+# Run all tests (unit + integration)
+pnpm test
+
+# Run only unit tests (fast, ~2 seconds)
+pnpm test:unit
+
+# Run only integration tests (with containers, ~18 seconds)
+pnpm test:integration
+
+# Run the comprehensive integration flow test
+pnpm test:integration:flow
+
+# Run tests in watch mode
+pnpm test:watch
+```
+
+### Test Configuration
+
+- **Unit Tests**: Use `vitest.config.mts` with standard timeouts
+- **Integration Tests**: Use `vitest.integration.config.mts` with extended timeouts for container startup
+- **Test Database**: PostgreSQL container with automatic migrations
+- **Test Storage**: MinIO container for attachment testing
+- **Test Environment**: Isolated test environment with `.env.test`
+
+### Test Coverage
+
+The integration tests cover:
+- ✅ Complete ticket lifecycle (create → comment → attachment → status updates → reopen)
+- ✅ MinIO storage operations (presigned URLs, bucket management)
+- ✅ Database operations with real PostgreSQL
+- ✅ Audit logging for all operations
+- ✅ Email notifications (mocked)
+- ✅ RBAC permissions and user roles
+
+### Test Environment Setup
+
+The integration tests use isolated test containers:
+
+- **Test Database**: PostgreSQL container with automatic migrations
+- **Test Storage**: MinIO container for attachment testing
+- **Test Environment**: Uses `.env.test` for isolated configuration
+- **Container Management**: Automatic startup/teardown with Testcontainers
+- **Sequential Execution**: Tests run in sequence to share containers efficiently
+
+### Test Environment Variables
+
+Create `.env.test` for test-specific configuration:
+
+```bash
+# Test Database (will be overridden by Testcontainers)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/test_tickets?schema=public"
+
+# Test MinIO (will be overridden by Testcontainers)
+MINIO_ENDPOINT="localhost"
+MINIO_PORT="9000"
+MINIO_SSL="false"
+MINIO_ACCESS_KEY="minioadmin"
+MINIO_SECRET_KEY="minioadmin"
+MINIO_BUCKET="ticket-attachments"
+
+# Test Email (mocked in tests)
+RESEND_API_KEY="test-key"
+EMAIL_FROM="test@example.com"
+ADMIN_EMAIL="admin@example.com"
+
+# Test Application
+APP_URL="http://localhost:3000"
+NODE_ENV="test"
 ```
 
 ---
@@ -226,7 +321,6 @@ DATABASE_URL=postgresql://postgres:postgres@db:5432/tickets?schema=public
 
 # Authentication
 BETTER_AUTH_SECRET=your-long-random-secret-key
-BETTER_AUTH_URL=http://localhost:3000
 
 # Email (Resend)
 RESEND_API_KEY=your-resend-api-key
@@ -240,6 +334,11 @@ MINIO_SSL=false
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=ticket-attachments
+
+# MinIO External Configuration (for presigned URLs)
+MINIO_EXTERNAL_ENDPOINT=minio
+MINIO_EXTERNAL_PORT=9000
+MINIO_EXTERNAL_SSL=false
 
 # Application
 APP_URL=http://localhost:3000

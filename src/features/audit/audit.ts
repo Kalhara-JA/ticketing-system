@@ -23,14 +23,19 @@ export async function audit(
     changes?: Record<string, unknown>,
     ip?: string | null
 ) {
-    await prisma.auditLog.create({
-        data: {
-            actorId: actorId ?? null,
-            action,
-            targetType,
-            targetId,
-            changes: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
-            ip: ip ?? undefined,
-        },
-    });
+    try {
+        await prisma.auditLog.create({
+            data: {
+                actorId: actorId ?? null,
+                action,
+                targetType,
+                targetId,
+                changes: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
+                ip: ip ?? undefined,
+            },
+        });
+    } catch (error) {
+        console.error("Audit log creation failed:", { actorId, action, targetType, targetId, error });
+        throw error;
+    }
 }

@@ -3,7 +3,7 @@
  * MinIO presigned URL generation for secure file uploads and downloads
  */
 
-import { minio, minioExternal, BUCKET, ensureBucket } from "./minio";
+import { minio, minioExternal, getBucket, ensureBucket } from "./minio";
 
 /**
  * Generates a presigned URL for file upload
@@ -16,7 +16,7 @@ export async function presignUpload(key: string, expirySeconds = 900) {
     await ensureBucket();
     
     // Use external client for presigned URLs so browsers can access them
-    return minioExternal.presignedPutObject(BUCKET, key, expirySeconds);
+    return minioExternal.presignedPutObject(getBucket(), key, expirySeconds);
 }
 
 /**
@@ -30,7 +30,7 @@ export async function presignDownload(key: string, expirySeconds = 900, resHeade
     await ensureBucket();
     
     // Use external client for presigned URLs so browsers can access them
-    return minioExternal.presignedGetObject(BUCKET, key, expirySeconds, resHeaders);
+    return minioExternal.presignedGetObject(getBucket(), key, expirySeconds, resHeaders);
 }
 
 /**
@@ -39,5 +39,5 @@ export async function presignDownload(key: string, expirySeconds = 900, resHeade
  * @returns {Promise<void>} Resolves when object is deleted
  */
 export async function deleteObject(key: string) {
-    await minio.removeObject(BUCKET, key);
+    await minio.removeObject(getBucket(), key);
 }

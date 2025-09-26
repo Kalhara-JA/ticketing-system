@@ -7,6 +7,7 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { removeAttachmentAction } from "@/features/tickets/actions/userTicket";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -154,7 +155,14 @@ export default function TicketAttachments({
               <button className="btn btn-sm" onClick={closePreview}>Close</button>
             </div>
             <div className="w-full max-h-[80vh] flex items-center justify-center bg-white rounded p-2">
-              <img src={preview.url} alt={preview.filename} className="max-w-full max-h-[76vh] object-contain" />
+              <Image 
+                src={preview.url} 
+                alt={preview.filename} 
+                width={800}
+                height={600}
+                className="max-w-full max-h-[76vh] object-contain" 
+                style={{ width: 'auto', height: 'auto' }}
+              />
             </div>
           </div>
         </div>

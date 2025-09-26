@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { getSession } from "@/lib/auth/session";
-import { minio, BUCKET } from "@/lib/storage/minio";
+import { minio, getBucket } from "@/lib/storage/minio";
 import { logger } from "@/lib/logger";
 
 /**
@@ -60,7 +60,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     // Stream the object through the API to avoid exposing presigned URLs
     try {
-        const stream = await minio.getObject(BUCKET, a.key);
+        const stream = await minio.getObject(getBucket(), a.key);
 
         // Convert Node stream to Web ReadableStream
         const webStream = new ReadableStream({

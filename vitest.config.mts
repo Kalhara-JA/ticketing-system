@@ -7,8 +7,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['tests/setup/env.ts'],
-    globalSetup: 'tests/setup/global.ts',
-    pool: 'forks',
-    testTimeout: 120000,
+    // Standard timeouts for unit tests
+    hookTimeout: 10000,
+    testTimeout: 10000,
   },
 })
