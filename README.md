@@ -63,7 +63,7 @@ scripts/
 
 ## Requirements
 
-* Node.js 20+ (Node 20 recommended)
+* Node.js 22+ (Node 22 LTS recommended)
 * PostgreSQL 14+ (the migration enables `pg_trgm`)
 * MinIO or S3-compatible storage
 * Resend API key (email)
@@ -108,8 +108,8 @@ MINIO_BUCKET="ticket-attachments"
 ## Install & dev
 
 ```bash
-# 1) Install deps
-pnpm install
+# 1) Install deps (use frozen lockfile)
+pnpm install --frozen-lockfile
 
 # 2) Build the composed Prisma schema + generate client
 pnpm run prisma:generate
@@ -260,7 +260,7 @@ AUTO_CLOSE_DAYS=14
 ## Deployment checklist
 
 * ✅ `APP_URL` set to your **public HTTPS** domain (no trailing slash).
-* ✅ `AUTH_SECRET` set to a long random string.
+* ✅ `BETTER_AUTH_SECRET` set to a long random string.
 * ✅ Postgres reachable; `DATABASE_URL` correct; migrations run on start.
 * ✅ Resend domain & sender verified; `RESEND_API_KEY` set.
 * ✅ MinIO/S3 accessible; bucket exists; envs set.

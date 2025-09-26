@@ -12,9 +12,10 @@ interface LogContext {
   [key: string]: unknown;
 }
 
+import { getEnv } from "@/lib/validation/env";
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === "development";
-  private isProduction = process.env.NODE_ENV === "production";
+  private isDevelopment = getEnv().NODE_ENV === "development";
+  private isProduction = getEnv().NODE_ENV === "production";
 
   private log(level: LogLevel, message: string, context?: LogContext) {
     // In production, only log errors and warnings

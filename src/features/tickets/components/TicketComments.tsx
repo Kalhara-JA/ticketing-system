@@ -6,6 +6,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { deleteCommentAction } from "@/features/comments/actions";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -22,6 +23,7 @@ export default function TicketComments({
   currentUserId?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const { addToast } = useToast();
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -43,7 +45,7 @@ export default function TicketComments({
           message: "The comment has been successfully deleted."
         });
         setDeleteModal({ isOpen: false, commentId: "", commentBody: "" });
-        window.location.reload();
+        startTransition(() => router.refresh());
       } catch (e) {
         addToast({
           type: "error",

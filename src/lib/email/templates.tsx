@@ -61,8 +61,10 @@ function button(href: string, label: string) {
   </p>`;
 }
 
+import { getEnv } from "@/lib/validation/env";
 function appBaseUrl() {
-  return (process.env.APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000");
+  const env = getEnv();
+  return env.APP_URL.replace(/\/$/, "");
 }
 
 export function renderTicketCreatedEmail(opts: {

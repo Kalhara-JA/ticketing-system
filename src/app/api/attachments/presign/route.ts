@@ -9,6 +9,7 @@ import { presignUpload } from "@/lib/storage/presign";
 import { getSession } from "@/lib/auth/session";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES } from "@/lib/validation/constants";
 import { logger } from "@/lib/logger";
+import { sanitizeFilename } from "@/lib/validation/sanitize";
 
 /**
  * Generates a presigned URL for secure file upload to MinIO storage
@@ -39,14 +40,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "File too large" }, { status: 400 });
         }
 
+        // Sanitize filename and map extension from MIME type (avoid trusting provided extension)
+        const safeProvided = sanitizeFilename(filename);
+        const mimeToExt: Record<typeof ATTACHMENT_ALLOWED_TYPES[number], string> = {
+            "application/pdf": "pdf",
+            "image/png": "png",
+            "image/jpeg": "jpg",
+        };
+        const ext = mimeToExt[contentType as typeof ATTACHMENT_ALLOWED_TYPES[number]] ?? (safeProvided.includes(".") ? safeProvided.split(".").pop()! : "bin");
+
         // Generate secure storage key with user isolation
-        const ext = filename.includes(".") ? filename.split(".").pop() : "bin";
         const key = `u/${session.user.id}/incoming/${randomUUID()}.${ext}`;
         
         // Create presigned URL with 15-minute expiry
         const url = await presignUpload(key, 15 * 60);
 
-        return NextResponse.json({ url, key });
+        return NextResponse.json({ url, key, filename: safeProvided });
     } catch (error) {
         logger.error("Presign request failed", {
             userId: session.user.id,

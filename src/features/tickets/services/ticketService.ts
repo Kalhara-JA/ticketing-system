@@ -8,6 +8,8 @@ import { audit } from "@/features/audit/audit";
 import { sendTicketCreatedEmail, sendStatusChangedEmail, sendReopenedEmail } from "@/features/tickets/email";
 import { shouldSendNotification } from "@/lib/email/notify";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/validation/env";
+import { escapeHtml } from "@/lib/validation/sanitize";
 import {
     REOPEN_WINDOW_DAYS,
     TICKET_PRIORITIES,
@@ -71,15 +73,22 @@ export const ticketService = {
             }
         }
 
+        const sanitizedTitle = escapeHtml(opts.title);
+        const sanitizedBody = escapeHtml(opts.body);
+        const sanitizedAttachments = (opts.attachments ?? []).map((a) => ({
+            ...a,
+            name: escapeHtml(a.name),
+        }));
+
         const ticket = await prisma.ticket.create({
             data: {
-                title: opts.title,
-                body: opts.body,
+                title: sanitizedTitle,
+                body: sanitizedBody,
                 userId: opts.user.id,
                 // status: default 'new' (enum default in schema)
                 // priority: default 'normal'
                 attachments: {
-                    create: (opts.attachments ?? []).map((a) => ({
+                    create: sanitizedAttachments.map((a) => ({
                         filename: a.name,
                         key: a.key,
                         size: a.size,
@@ -416,16 +425,16 @@ export const ticketService = {
                 await sendReopenedEmail({
                     ticketId: t.id,
                     title: t.title,
-                    adminEmail: process.env.ADMIN_EMAIL!,
+                    adminEmail: getEnv().ADMIN_EMAIL,
                 });
-                logger.emailOperation("reopen notification sent", process.env.ADMIN_EMAIL!, {
+                logger.emailOperation("reopen notification sent", getEnv().ADMIN_EMAIL, {
                     ticketId: t.id,
                     title: t.title,
                 });
             } catch (error) {
                 logger.error("Failed to send reopen notification", {
                     ticketId: t.id,
-                    adminEmail: process.env.ADMIN_EMAIL!,
+                    adminEmail: getEnv().ADMIN_EMAIL,
                     error: error instanceof Error ? error.message : "Unknown error",
                 });
             }

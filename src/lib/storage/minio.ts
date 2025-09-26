@@ -5,18 +5,20 @@
 
 import { Client } from "minio";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/validation/env";
 
-const endPoint = process.env.MINIO_ENDPOINT!;
-const port = Number(process.env.MINIO_PORT || 9000);
-const useSSL = process.env.MINIO_SSL === "true";
-const accessKey = process.env.MINIO_ACCESS_KEY!;
-const secretKey = process.env.MINIO_SECRET_KEY!;
-export const BUCKET = process.env.MINIO_BUCKET!;
+const env = getEnv();
+const endPoint = env.MINIO_ENDPOINT;
+const port = Number(env.MINIO_PORT || 9000);
+const useSSL = !!env.MINIO_SSL;
+const accessKey = env.MINIO_ACCESS_KEY;
+const secretKey = env.MINIO_SECRET_KEY;
+export const BUCKET = env.MINIO_BUCKET;
 
 // External URL for presigned URLs (what browsers will access)
-const externalEndPoint = process.env.MINIO_EXTERNAL_ENDPOINT || endPoint;
-const externalPort = Number(process.env.MINIO_EXTERNAL_PORT || port);
-const externalUseSSL = process.env.MINIO_EXTERNAL_SSL === "true" || useSSL;
+const externalEndPoint = env.MINIO_EXTERNAL_ENDPOINT || endPoint;
+const externalPort = Number(env.MINIO_EXTERNAL_PORT || port);
+const externalUseSSL = (env.MINIO_EXTERNAL_SSL ?? useSSL) as boolean;
 
 // Lazy initialization to avoid errors during build time when env vars are not available
 let _minio: Client | null = null;

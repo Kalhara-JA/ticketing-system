@@ -11,10 +11,12 @@ import { renderAuthEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { prisma } from "../db/prisma";
 import { USERNAME_REGEX } from "../validation/constants";
+import { getEnv } from "@/lib/validation/env";
 
+const env = getEnv();
 export const auth = betterAuth({
-  baseURL: process.env.APP_URL,
-  secret: process.env.AUTH_SECRET,
+  baseURL: env.APP_URL,
+  secret: env.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   user: {
     additionalFields: {

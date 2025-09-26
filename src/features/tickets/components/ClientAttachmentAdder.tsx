@@ -8,6 +8,7 @@
 import { useState, useTransition } from "react";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES } from "@/lib/validation/constants";
 import { AttachmentMeta } from "@/lib/validation/ticketSchemas";
+import { validateFileContent } from "@/lib/validation/fileValidation";
 import { z } from "zod";
 import { addAttachmentsAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
@@ -43,6 +44,17 @@ export default function ClientAttachmentAdder({ ticketId }: { ticketId: string }
                         message: `${f.name} exceeds the maximum size of ${Math.round(ATTACHMENT_MAX_BYTES / 1024 / 1024)}MB.`
                     });
                     continue; 
+                }
+
+                // Security: Validate file content matches declared MIME type
+                const contentValidation = await validateFileContent(f, f.type);
+                if (!contentValidation.valid) {
+                    addToast({
+                        type: "error",
+                        title: "Invalid file content",
+                        message: contentValidation.error || `File content does not match declared type for ${f.name}.`
+                    });
+                    continue;
                 }
 
                 // Security: Get presigned URL for secure upload

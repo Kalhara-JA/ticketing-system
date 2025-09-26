@@ -3,7 +3,7 @@
 ############################
 # Base
 ############################
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PNPM_HOME="/pnpm"
@@ -55,7 +55,7 @@ RUN pnpm run build
 ############################
 # Runtime
 ############################
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PNPM_HOME="/pnpm"

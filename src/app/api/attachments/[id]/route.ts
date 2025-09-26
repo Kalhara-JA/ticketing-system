@@ -74,12 +74,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             },
         });
 
+        // Use attachment disposition with a sanitized filename to avoid header injection
+        const safeName = encodeURIComponent(a.filename.replace(/\r|\n|"/g, ""));
         return new Response(webStream, {
             status: 200,
             headers: new Headers({
                 "content-type": a.contentType,
                 "content-length": String(a.size),
-                "content-disposition": `inline; filename="${encodeURIComponent(a.filename)}"`,
+                "content-disposition": `attachment; filename*=UTF-8''${safeName}`,
                 // To force download instead:
                 // "content-disposition": `attachment; filename="${encodeURIComponent(a.filename)}"`,
                 "cache-control": "private, no-store",

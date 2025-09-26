@@ -8,15 +8,15 @@ Internal Service Request (Ticketing) System - A multi-user service request manag
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - pnpm
 - Docker (for database and MinIO)
 
 ### Setup
 
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies (use frozen lockfile)
+pnpm install --frozen-lockfile
 
 # Start services
 docker-compose up -d

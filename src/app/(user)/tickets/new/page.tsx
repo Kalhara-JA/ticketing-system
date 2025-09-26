@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreateTicketInput, AttachmentMeta } from "@/lib/validation/ticketSchemas";
+import { validateFileContent } from "@/lib/validation/fileValidation";
 import { createTicketAction } from "@/features/tickets/actions/createTicket";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_COUNT } from "@/lib/validation/constants";
 import { useToast } from "@/components/Toast";
@@ -31,7 +32,7 @@ export default function NewTicketPage() {
     });
 
     // Business logic: File validation and selection (upload happens on form submission)
-    const onFilesPicked = (files: FileList | null) => {
+    const onFilesPicked = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
 
         // Security: Enforce attachment count limit
@@ -64,6 +65,18 @@ export default function NewTicketPage() {
                 });
                 continue;
             }
+
+            // Security: Validate file content matches declared MIME type
+            const contentValidation = await validateFileContent(f, f.type);
+            if (!contentValidation.valid) {
+                addToast({
+                    type: "error",
+                    title: "Invalid file content",
+                    message: contentValidation.error || `File content does not match declared type for ${f.name}.`
+                });
+                continue;
+            }
+
             validFiles.push(f);
         }
 

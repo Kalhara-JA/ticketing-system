@@ -5,11 +5,12 @@
 
 import { Resend } from "resend";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/validation/env";
 
-const apiKey = process.env.RESEND_API_KEY;
-export const EMAIL_FROM =
-  process.env.EMAIL_FROM ?? "Support <onboarding@resend.dev>";
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@example.com";
+const env = getEnv();
+const apiKey = env.RESEND_API_KEY;
+export const EMAIL_FROM = env.EMAIL_FROM;
+export const ADMIN_EMAIL = env.ADMIN_EMAIL;
 
 // Lazy initialization to avoid errors during build time when env vars are not available
 let _resend: Resend | null = null;

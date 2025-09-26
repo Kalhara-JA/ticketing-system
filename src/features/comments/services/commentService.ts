@@ -9,6 +9,7 @@ import { shouldSendNotification } from "@/lib/email/notify";
 import { sendCommentAddedEmail } from "@/features/tickets/email";
 import { ADMIN_EMAIL } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
+import { escapeHtml } from "@/lib/validation/sanitize";
 
 /**
  * Checks if user has permission to read a ticket (admin or ticket owner)
@@ -45,11 +46,13 @@ export const commentService = {
             throw new Error("Forbidden");
         }
 
+        const sanitizedBody = escapeHtml(opts.body);
+
         const comment = await prisma.comment.create({
             data: {
                 ticketId: opts.ticketId,
                 authorId: opts.user.id,
-                body: opts.body,
+                body: sanitizedBody,
             },
             select: {
                 id: true,

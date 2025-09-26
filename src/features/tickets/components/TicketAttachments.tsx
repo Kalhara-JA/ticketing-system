@@ -6,6 +6,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { removeAttachmentAction } from "@/features/tickets/actions/userTicket";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -22,12 +23,15 @@ export default function TicketAttachments({
   currentUserId?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const { addToast } = useToast();
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     attachmentId: string;
     filename: string;
   }>({ isOpen: false, attachmentId: "", filename: "" });
+
+  const [preview, setPreview] = useState<{ open: boolean; url: string; filename: string } | null>(null);
 
   const handleDeleteClick = (attachmentId: string, filename: string) => {
     setDeleteModal({ isOpen: true, attachmentId, filename });
@@ -43,7 +47,7 @@ export default function TicketAttachments({
           message: "The attachment has been successfully deleted."
         });
         setDeleteModal({ isOpen: false, attachmentId: "", filename: "" });
-        window.location.reload();
+        startTransition(() => router.refresh());
       } catch (e) {
         addToast({
           type: "error",
@@ -57,6 +61,17 @@ export default function TicketAttachments({
   const handleDeleteCancel = () => {
     setDeleteModal({ isOpen: false, attachmentId: "", filename: "" });
   };
+
+  const isImage = (name: string) => /\.(png|jpe?g|gif|webp|svg)$/i.test(name);
+  const isPdf = (name: string) => /\.(pdf)$/i.test(name);
+  const urlFor = (a: { id: string; url?: string }) => a.url ?? `/api/attachments/${a.id}`;
+
+  const openPreview = (a: { id: string; filename: string; url?: string }) => {
+    const url = urlFor(a);
+    setPreview({ open: true, url, filename: a.filename });
+  };
+
+  const closePreview = () => setPreview(null);
   return (
     <div className="card p-6">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Attachments</h2>
@@ -71,8 +86,34 @@ export default function TicketAttachments({
                   <span className="text-xs font-medium text-gray-600">📎</span>
                 </div>
                 <div className="flex-1">
-                  <a className="font-medium text-gray-900 hover:text-blue-600 transition-colors" href={a.url ?? `/api/attachments/${a.id}`} target="_blank" rel="noopener noreferrer">
+                  <a className="font-medium text-gray-900 hover:text-blue-600 transition-colors" href={urlFor(a)} target="_blank" rel="noopener noreferrer">
                     {a.filename}
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  {isImage(a.filename) ? (
+                    <button
+                      className="btn btn-ghost btn-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => openPreview(a)}
+                    >
+                      Preview
+                    </button>
+                  ) : isPdf(a.filename) ? (
+                    <a
+                      className="btn btn-ghost btn-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      href={urlFor(a)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open
+                    </a>
+                  ) : null}
+                  <a
+                    className="btn btn-ghost btn-sm text-green-600 hover:text-green-700 hover:bg-green-50"
+                    href={urlFor(a)}
+                    download={a.filename}
+                  >
+                    Download
                   </a>
                 </div>
                 {allowDelete && (
@@ -105,6 +146,19 @@ export default function TicketAttachments({
         variant="danger"
         isLoading={isPending}
       />
+
+      {preview?.open ? (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={closePreview}>
+          <div className="relative max-w-screen-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute -top-10 right-0">
+              <button className="btn btn-sm" onClick={closePreview}>Close</button>
+            </div>
+            <div className="w-full max-h-[80vh] flex items-center justify-center bg-white rounded p-2">
+              <img src={preview.url} alt={preview.filename} className="max-w-full max-h-[76vh] object-contain" />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
