@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 import { audit } from "@/features/audit/audit";
 import { shouldSendNotification } from "@/lib/email/notify";
 import { sendCommentAddedEmail } from "@/features/tickets/email";
-import { ADMIN_EMAIL } from "@/lib/email/resend";
+import { getAdminEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { escapeHtml } from "@/lib/validation/sanitize";
 
@@ -69,7 +69,7 @@ export const commentService = {
 
         // Notify the "other party"
         const isAdmin = opts.user.role === "admin";
-        const recipientEmail = isAdmin ? comment.ticket.user.email : ADMIN_EMAIL;
+        const recipientEmail = isAdmin ? comment.ticket.user.email : getAdminEmail();
         if (await shouldSendNotification(opts.ticketId, "comment_added")) {
             try {
                 await sendCommentAddedEmail({

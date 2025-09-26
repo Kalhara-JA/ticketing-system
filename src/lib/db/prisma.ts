@@ -10,13 +10,20 @@ declare global {
     var prisma: PrismaClient | undefined;
 }
 
-// Global instance to prevent multiple Prisma clients in development
-const env = getEnv();
-export const prisma =
-    global.prisma ??
-    new PrismaClient({
-        log: env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-    });
+// Lazy initialization to avoid environment validation during build time
+let _prisma: PrismaClient | undefined;
 
-// Prevent multiple instances in development
-if (env.NODE_ENV !== "production") global.prisma = prisma;
+export const prisma = new Proxy({} as PrismaClient, {
+    get(target, prop) {
+        if (!_prisma) {
+            const env = getEnv();
+            _prisma = global.prisma ?? new PrismaClient({
+                log: env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+            });
+            
+            // Prevent multiple instances in development
+            if (env.NODE_ENV !== "production") global.prisma = _prisma;
+        }
+        return _prisma[prop as keyof PrismaClient];
+    }
+});

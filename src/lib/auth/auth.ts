@@ -6,7 +6,7 @@
 import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { resend, EMAIL_FROM } from "@/lib/email/resend";
+import { resend, getEmailFrom } from "@/lib/email/resend";
 import { renderAuthEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { prisma } from "../db/prisma";
@@ -84,7 +84,7 @@ export const auth = betterAuth({
       });
       try {
         await resend.emails.send({
-          from: EMAIL_FROM,
+          from: getEmailFrom(),
           to: user.email,
           subject: "Reset your password",
           html,
@@ -118,7 +118,7 @@ export const auth = betterAuth({
       });
       try {
         await resend.emails.send({
-          from: EMAIL_FROM,
+          from: getEmailFrom(),
           to: user.email,
           subject: "Verify your email",
           html,

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/db/prisma";
-import { EMAIL_FROM, resend } from "./resend";
+import { getEmailFrom, resend } from "./resend";
 
 /**
  * Prevents duplicate notifications by checking if one was sent in the last minute
@@ -32,7 +32,7 @@ export async function shouldSendNotification(ticketId: string, eventType: string
  */
 export async function sendEmail(to: string, subject: string, html: string) {
     await resend.emails.send({
-        from: EMAIL_FROM,
+        from: getEmailFrom(),
         to, subject, html,
     });
 }

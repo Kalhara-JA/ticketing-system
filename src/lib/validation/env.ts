@@ -45,6 +45,11 @@ export function getEnv() {
   // Build a raw env object, injecting sane defaults when running tests
   const rawEnv: Record<string, unknown> = { ...process.env } as Record<string, unknown>;
   const nodeEnv = (rawEnv.NODE_ENV as string) || "development";
+  
+  // During build time, provide minimal defaults to avoid validation errors
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                     process.env.NODE_ENV === 'production' && !process.env.APP_URL;
+  
   if (nodeEnv === "test") {
     rawEnv.APP_URL = rawEnv.APP_URL ?? "http://localhost:3000";
     rawEnv.BETTER_AUTH_SECRET = rawEnv.BETTER_AUTH_SECRET ?? "test_secret_key_at_least_24_chars";
@@ -54,6 +59,17 @@ export function getEnv() {
     rawEnv.MINIO_SSL = rawEnv.MINIO_SSL ?? false;
     rawEnv.MINIO_ACCESS_KEY = rawEnv.MINIO_ACCESS_KEY ?? "minioadmin";
     rawEnv.MINIO_SECRET_KEY = rawEnv.MINIO_SECRET_KEY ?? "minioadmin";
+    rawEnv.MINIO_BUCKET = rawEnv.MINIO_BUCKET ?? "ticket-attachments";
+  } else if (isBuildTime) {
+    // Provide build-time defaults to avoid validation errors during Docker build
+    rawEnv.APP_URL = rawEnv.APP_URL ?? "http://localhost:3000";
+    rawEnv.BETTER_AUTH_SECRET = rawEnv.BETTER_AUTH_SECRET ?? "build_time_secret_key_at_least_24_chars";
+    rawEnv.RESEND_API_KEY = rawEnv.RESEND_API_KEY ?? "build_time_resend_key";
+    rawEnv.MINIO_ENDPOINT = rawEnv.MINIO_ENDPOINT ?? "localhost";
+    rawEnv.MINIO_PORT = rawEnv.MINIO_PORT ?? 9000;
+    rawEnv.MINIO_SSL = rawEnv.MINIO_SSL ?? false;
+    rawEnv.MINIO_ACCESS_KEY = rawEnv.MINIO_ACCESS_KEY ?? "build_time_access_key";
+    rawEnv.MINIO_SECRET_KEY = rawEnv.MINIO_SECRET_KEY ?? "build_time_secret_key";
     rawEnv.MINIO_BUCKET = rawEnv.MINIO_BUCKET ?? "ticket-attachments";
   }
 

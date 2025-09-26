@@ -4,7 +4,7 @@
  */
 
 import { resend } from "@/lib/email/resend";
-import { EMAIL_FROM, ADMIN_EMAIL } from "@/lib/email/resend";
+import { getEmailFrom, getAdminEmail } from "@/lib/email/resend";
 import {
   renderTicketCreatedEmail,
   renderCommentAddedEmail,
@@ -30,8 +30,8 @@ export async function sendTicketCreatedEmail(opts: {
     const html = renderTicketCreatedEmail(opts);
 
     await resend.emails.send({
-        from: EMAIL_FROM,
-        to: ADMIN_EMAIL,
+        from: getEmailFrom(),
+        to: getAdminEmail(),
         subject: `New ticket: ${opts.title}`,
         html,
     });
@@ -53,7 +53,7 @@ export async function sendCommentAddedEmail(opts: {
 }, recipientRole: "admin" | "user") {
     const html = renderCommentAddedEmail({ ...opts, recipientRole });
     await resend.emails.send({
-        from: EMAIL_FROM,
+        from: getEmailFrom(),
         to: opts.recipientEmail,
         subject: `New comment on: ${opts.title}`,
         html,
@@ -77,7 +77,7 @@ export async function sendStatusChangedEmail(opts: {
 }) {
     const html = renderStatusChangedEmail(opts);
     await resend.emails.send({
-        from: EMAIL_FROM,
+        from: getEmailFrom(),
         to: opts.recipientEmail,
         subject: `Status changed: ${opts.title} → ${opts.newStatus}`,
         html,
@@ -99,7 +99,7 @@ export async function sendReopenedEmail(opts: {
 }) {
     const html = renderReopenedEmail(opts);
     await resend.emails.send({
-        from: EMAIL_FROM,
+        from: getEmailFrom(),
         to: opts.adminEmail,
         subject: `Reopened: ${opts.title}`,
         html,
