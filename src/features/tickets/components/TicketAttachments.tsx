@@ -5,9 +5,8 @@
 
 "use client";
 
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { removeAttachmentAction } from "@/features/tickets/actions/userTicket";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -32,7 +31,7 @@ export default function TicketAttachments({
     filename: string;
   }>({ isOpen: false, attachmentId: "", filename: "" });
 
-  const [preview, setPreview] = useState<{ open: boolean; url: string; filename: string } | null>(null);
+  const [preview, setPreview] = useState<{ open: boolean; url: string; filename: string; blobUrl?: string } | null>(null);
 
   const handleDeleteClick = (attachmentId: string, filename: string) => {
     setDeleteModal({ isOpen: true, attachmentId, filename });
@@ -67,12 +66,43 @@ export default function TicketAttachments({
   const isPdf = (name: string) => /\.(pdf)$/i.test(name);
   const urlFor = (a: { id: string; url?: string }) => a.url ?? `/api/attachments/${a.id}`;
 
-  const openPreview = (a: { id: string; filename: string; url?: string }) => {
+  const openPreview = async (a: { id: string; filename: string; url?: string }) => {
     const url = urlFor(a);
-    setPreview({ open: true, url, filename: a.filename });
+    try {
+      // Fetch the image with proper authentication (cookies are included automatically)
+      const response = await fetch(url, {
+        credentials: 'include', // Include cookies for authentication
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load image: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setPreview({ open: true, url, filename: a.filename, blobUrl });
+    } catch (error) {
+      console.error('Failed to load image for preview:', error);
+      // Fallback to direct URL (might not work due to auth, but worth trying)
+      setPreview({ open: true, url, filename: a.filename });
+    }
   };
 
-  const closePreview = () => setPreview(null);
+  const closePreview = () => {
+    if (preview?.blobUrl) {
+      URL.revokeObjectURL(preview.blobUrl);
+    }
+    setPreview(null);
+  };
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (preview?.blobUrl) {
+        URL.revokeObjectURL(preview.blobUrl);
+      }
+    };
+  }, [preview?.blobUrl]);
   return (
     <div className="card p-6">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Attachments</h2>
@@ -155,13 +185,18 @@ export default function TicketAttachments({
               <button className="btn btn-sm" onClick={closePreview}>Close</button>
             </div>
             <div className="w-full max-h-[80vh] flex items-center justify-center bg-white rounded p-2">
-              <Image 
-                src={preview.url} 
+              <img 
+                src={preview.blobUrl || preview.url} 
                 alt={preview.filename} 
-                width={800}
-                height={600}
                 className="max-w-full max-h-[76vh] object-contain" 
                 style={{ width: 'auto', height: 'auto' }}
+                onError={(e) => {
+                  console.error('Failed to load image:', e);
+                  // If blob URL fails, try the direct URL as fallback
+                  if (preview.blobUrl && e.currentTarget.src !== preview.url) {
+                    e.currentTarget.src = preview.url;
+                  }
+                }}
               />
             </div>
           </div>
