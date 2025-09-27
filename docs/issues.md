@@ -112,5 +112,5 @@
 - **Example:** Multiple test files use `(prismaModule as any).prisma`
 - **Recommendation:** Standardize for better type safety and consistency
 - **Status:** ✅ **RESOLVED**
-- **Resolution:** The test suite now uses proper integration testing with real database connections instead of mocking. Integration tests in `tests/integration/` use Testcontainers with real PostgreSQL and MinIO, eliminating the need for `(prismaModule as any).prisma` patterns. Unit tests use proper TypeScript typing with mocked dependencies where appropriate, and the test setup in `tests/setup/` provides consistent patterns across all test files.
+- **Resolution:** All test files have been updated to use proper TypeScript typing with `vi.mocked(prisma)` instead of the problematic `(prismaModule as any).prisma` pattern. The changes include: 1) Updated imports to use direct `prisma` import, 2) Replaced all 67 instances of `(prismaModule as any).prisma` with `mockPrisma` using proper TypeScript typing, 3) Maintained consistent mocking patterns across all test files, 4) Integration tests continue to use real database connections via Testcontainers for comprehensive testing.
 

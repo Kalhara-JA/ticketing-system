@@ -1,17 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { listUserTickets, listAllTickets, getUserTicketDetail, getAdminTicketDetail } from "@/features/tickets/repositories/ticketRepository";
-import * as prismaModule from "@/lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 
-vi.mock("@/lib/db/prisma", () => ({ 
-  prisma: { 
-    ticket: { 
+// Mock the prisma client
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    ticket: {
       count: vi.fn(),
       findMany: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn()
     }
-  } 
+  }
 }));
+
+// Get the mocked prisma instance
+const mockPrisma = vi.mocked(prisma);
 
 describe("ticketRepository", () => {
   const mockTickets = [
@@ -44,9 +48,8 @@ describe("ticketRepository", () => {
 
   describe("listUserTickets", () => {
     it("returns paginated user tickets with default parameters", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(25);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(25);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       const result = await listUserTickets({ userId: "u1" });
 
@@ -58,10 +61,10 @@ describe("ticketRepository", () => {
       expect(result.hasNextPage).toBe(true);
       expect(result.hasPreviousPage).toBe(false);
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: { userId: "u1" }
       });
-      expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith({
         where: { userId: "u1" },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: 0,
@@ -74,9 +77,8 @@ describe("ticketRepository", () => {
     });
 
     it("handles custom pagination parameters", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(50);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(50);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       const result = await listUserTickets({ 
         userId: "u1", 
@@ -90,7 +92,7 @@ describe("ticketRepository", () => {
       expect(result.hasNextPage).toBe(true);
       expect(result.hasPreviousPage).toBe(true);
 
-      expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith({
         where: { userId: "u1" },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: 10, // (page 2 - 1) * pageSize 10
@@ -100,13 +102,12 @@ describe("ticketRepository", () => {
     });
 
     it("filters by search query", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(5);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(5);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       await listUserTickets({ userId: "u1", q: "test query" });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           userId: "u1",
           OR: [
@@ -118,13 +119,12 @@ describe("ticketRepository", () => {
     });
 
     it("filters by status", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(3);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(3);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       await listUserTickets({ userId: "u1", status: ["new", "in_progress"] });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           userId: "u1",
           status: { in: ["new", "in_progress"] }
@@ -133,13 +133,12 @@ describe("ticketRepository", () => {
     });
 
     it("filters by priority", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(2);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(2);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       await listUserTickets({ userId: "u1", priority: ["high", "urgent"] });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           userId: "u1",
           priority: { in: ["high", "urgent"] }
@@ -148,9 +147,8 @@ describe("ticketRepository", () => {
     });
 
     it("combines multiple filters", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(1);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(1);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       await listUserTickets({ 
         userId: "u1", 
@@ -159,7 +157,7 @@ describe("ticketRepository", () => {
         priority: ["high"] 
       });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           userId: "u1",
           OR: [
@@ -173,9 +171,8 @@ describe("ticketRepository", () => {
     });
 
     it("handles edge case pagination", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(0);
-      prisma.ticket.findMany.mockResolvedValue([]);
+      mockPrisma.ticket.count.mockResolvedValue(0);
+      mockPrisma.ticket.findMany.mockResolvedValue([]);
 
       const result = await listUserTickets({ userId: "u1", page: 0, pageSize: 0 });
 
@@ -185,13 +182,12 @@ describe("ticketRepository", () => {
     });
 
     it("enforces maximum page size", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(1000);
-      prisma.ticket.findMany.mockResolvedValue(mockTickets);
+      mockPrisma.ticket.count.mockResolvedValue(1000);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockTickets);
 
       await listUserTickets({ userId: "u1", pageSize: 200 }); // Over max
 
-      expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith({
         where: { userId: "u1" },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: 0,
@@ -203,9 +199,8 @@ describe("ticketRepository", () => {
 
   describe("listAllTickets", () => {
     it("returns paginated admin tickets with user info", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(15);
-      prisma.ticket.findMany.mockResolvedValue(mockUserTickets);
+      mockPrisma.ticket.count.mockResolvedValue(15);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockUserTickets);
 
       const result = await listAllTickets({});
 
@@ -215,10 +210,10 @@ describe("ticketRepository", () => {
       expect(result.currentPage).toBe(1);
       expect(result.pageSize).toBe(20);
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {}
       });
-      expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findMany).toHaveBeenCalledWith({
         where: {},
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: 0,
@@ -231,13 +226,12 @@ describe("ticketRepository", () => {
     });
 
     it("filters by requester (username/email)", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(3);
-      prisma.ticket.findMany.mockResolvedValue(mockUserTickets);
+      mockPrisma.ticket.count.mockResolvedValue(3);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockUserTickets);
 
       await listAllTickets({ requester: "john" });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           user: {
             OR: [
@@ -250,9 +244,8 @@ describe("ticketRepository", () => {
     });
 
     it("combines admin filters correctly", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(2);
-      prisma.ticket.findMany.mockResolvedValue(mockUserTickets);
+      mockPrisma.ticket.count.mockResolvedValue(2);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockUserTickets);
 
       await listAllTickets({ 
         q: "bug", 
@@ -261,7 +254,7 @@ describe("ticketRepository", () => {
         requester: "testuser"
       });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {
           OR: [
             { title: { contains: "bug", mode: "insensitive" } },
@@ -280,13 +273,12 @@ describe("ticketRepository", () => {
     });
 
     it("ignores empty requester filter", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.count.mockResolvedValue(10);
-      prisma.ticket.findMany.mockResolvedValue(mockUserTickets);
+      mockPrisma.ticket.count.mockResolvedValue(10);
+      mockPrisma.ticket.findMany.mockResolvedValue(mockUserTickets);
 
       await listAllTickets({ requester: "" });
 
-      expect(prisma.ticket.count).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.count).toHaveBeenCalledWith({
         where: {}
       });
     });
@@ -294,7 +286,6 @@ describe("ticketRepository", () => {
 
   describe("getUserTicketDetail", () => {
     it("returns user ticket with full details", async () => {
-      const prisma = (prismaModule as any).prisma;
       const mockDetail = {
         id: "t1",
         title: "Test Ticket",
@@ -314,12 +305,12 @@ describe("ticketRepository", () => {
           }
         ]
       };
-      prisma.ticket.findFirst.mockResolvedValue(mockDetail);
+      mockPrisma.ticket.findFirst.mockResolvedValue(mockDetail);
 
       const result = await getUserTicketDetail("u1", "t1");
 
       expect(result).toEqual(mockDetail);
-      expect(prisma.ticket.findFirst).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findFirst).toHaveBeenCalledWith({
         where: { id: "t1", userId: "u1" },
         select: {
           id: true, title: true, body: true, status: true, priority: true,
@@ -337,8 +328,7 @@ describe("ticketRepository", () => {
     });
 
     it("returns null for non-existent ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findFirst.mockResolvedValue(null);
+      mockPrisma.ticket.findFirst.mockResolvedValue(null);
 
       const result = await getUserTicketDetail("u1", "nonexistent");
 
@@ -346,8 +336,7 @@ describe("ticketRepository", () => {
     });
 
     it("returns null for ticket belonging to different user", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findFirst.mockResolvedValue(null);
+      mockPrisma.ticket.findFirst.mockResolvedValue(null);
 
       const result = await getUserTicketDetail("u1", "t1"); // Ticket belongs to u2
 
@@ -357,7 +346,6 @@ describe("ticketRepository", () => {
 
   describe("getAdminTicketDetail", () => {
     it("returns admin ticket with full details including attachment keys", async () => {
-      const prisma = (prismaModule as any).prisma;
       const mockDetail = {
         id: "t1",
         title: "Test Ticket",
@@ -386,12 +374,12 @@ describe("ticketRepository", () => {
           }
         ]
       };
-      prisma.ticket.findUnique.mockResolvedValue(mockDetail);
+      mockPrisma.ticket.findUnique.mockResolvedValue(mockDetail);
 
       const result = await getAdminTicketDetail("t1");
 
       expect(result).toEqual(mockDetail);
-      expect(prisma.ticket.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.findUnique).toHaveBeenCalledWith({
         where: { id: "t1" },
         select: {
           id: true, title: true, body: true, status: true, priority: true,
@@ -415,8 +403,7 @@ describe("ticketRepository", () => {
     });
 
     it("returns null for non-existent ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(null);
+      mockPrisma.ticket.findUnique.mockResolvedValue(null);
 
       const result = await getAdminTicketDetail("nonexistent");
 

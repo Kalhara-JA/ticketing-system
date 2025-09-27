@@ -1,23 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentService } from "@/features/comments/services/commentService";
-import * as prismaModule from "@/lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 import * as notifyModule from "@/lib/email/notify";
 import * as emailModule from "@/features/tickets/email";
 import * as auditModule from "@/features/audit/audit";
 
-vi.mock("@/lib/db/prisma", () => ({ 
-  prisma: { 
-    ticket: { findFirst: vi.fn() }, 
-    comment: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() } 
-  } 
+// Mock the prisma client
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    ticket: { findFirst: vi.fn() },
+    comment: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() }
+  }
 }));
+
+// Get the mocked prisma instance
+const mockPrisma = vi.mocked(prisma);
 vi.mock("@/lib/email/notify", () => ({ shouldSendNotification: vi.fn().mockResolvedValue(true) }));
 vi.mock("@/features/tickets/email", () => ({ sendCommentAddedEmail: vi.fn() }));
 vi.mock("@/features/audit/audit", () => ({ audit: vi.fn() }));
 vi.mock("@/lib/email/resend", () => ({ 
   resend: { emails: { send: vi.fn() } }, 
-  EMAIL_FROM: "test@example.com",
-  ADMIN_EMAIL: "admin@example.com"
+  getEmailFrom: vi.fn(() => "test@example.com"),
+  getAdminEmail: vi.fn(() => "admin@example.com")
 }));
 
 describe("commentService", () => {
@@ -30,12 +34,11 @@ describe("commentService", () => {
 
   describe("add", () => {
     it("enforces RBAC via ticket ownership for users", async () => {
-      const prisma = (prismaModule as any).prisma;
       const shouldSendNotification = vi.fn().mockResolvedValue(true);
       (notifyModule as any).shouldSendNotification = shouldSendNotification;
       
-      prisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
-      prisma.comment.create.mockResolvedValue({ 
+      mockPrisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
+      mockPrisma.comment.create.mockResolvedValue({ 
         id: "c1", 
         ticket: { 
           id: "t1", 
@@ -62,12 +65,11 @@ describe("commentService", () => {
     });
 
     it("allows admin to comment on any ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
       const shouldSendNotification = vi.fn().mockResolvedValue(true);
       (notifyModule as any).shouldSendNotification = shouldSendNotification;
       
-      prisma.ticket.findFirst.mockResolvedValue({ id: "t1" }); // Admin can access any ticket
-      prisma.comment.create.mockResolvedValue({ 
+      mockPrisma.ticket.findFirst.mockResolvedValue({ id: "t1" }); // Admin can access any ticket
+      mockPrisma.comment.create.mockResolvedValue({ 
         id: "c1", 
         ticket: { 
           id: "t1", 
@@ -92,8 +94,7 @@ describe("commentService", () => {
     });
 
     it("rejects user commenting on other user's ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findFirst.mockResolvedValue(null); // No ticket found for this user
+      mockPrisma.ticket.findFirst.mockResolvedValue(null); // No ticket found for this user
       
       await expect(commentService.add({ 
         user: mockUser, 
@@ -103,12 +104,11 @@ describe("commentService", () => {
     });
 
     it("handles notification throttling", async () => {
-      const prisma = (prismaModule as any).prisma;
       const shouldSendNotification = vi.fn().mockResolvedValue(false); // Throttled
       (notifyModule as any).shouldSendNotification = shouldSendNotification;
       
-      prisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
-      prisma.comment.create.mockResolvedValue({ 
+      mockPrisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
+      mockPrisma.comment.create.mockResolvedValue({ 
         id: "c1", 
         ticket: { 
           id: "t1", 
@@ -129,9 +129,8 @@ describe("commentService", () => {
     });
 
     it("handles IP address in audit log", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
-      prisma.comment.create.mockResolvedValue({ 
+      mockPrisma.ticket.findFirst.mockResolvedValue({ id: "t1" });
+      mockPrisma.comment.create.mockResolvedValue({ 
         id: "c1", 
         ticket: { 
           id: "t1", 
@@ -154,13 +153,12 @@ describe("commentService", () => {
 
   describe("softDelete", () => {
     it("allows admin to delete any comment", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.comment.findUnique.mockResolvedValue({ 
+      mockPrisma.comment.findUnique.mockResolvedValue({ 
         id: "c1", 
         authorId: "u1", 
         ticketId: "t1" 
       });
-      prisma.comment.update.mockResolvedValue({ id: "c1" });
+      mockPrisma.comment.update.mockResolvedValue({ id: "c1" });
       
       const res = await commentService.softDelete({ 
         user: mockAdmin, 
@@ -168,7 +166,7 @@ describe("commentService", () => {
       });
       
       expect(res.id).toBe("c1");
-      expect(prisma.comment.update).toHaveBeenCalledWith({
+      expect(mockPrisma.comment.update).toHaveBeenCalledWith({
         where: { id: "c1" },
         data: { deletedAt: expect.any(Date) }
       });
@@ -176,13 +174,12 @@ describe("commentService", () => {
     });
 
     it("allows author to delete their own comment", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.comment.findUnique.mockResolvedValue({ 
+      mockPrisma.comment.findUnique.mockResolvedValue({ 
         id: "c1", 
         authorId: "u1", 
         ticketId: "t1" 
       });
-      prisma.comment.update.mockResolvedValue({ id: "c1" });
+      mockPrisma.comment.update.mockResolvedValue({ id: "c1" });
       
       const res = await commentService.softDelete({ 
         user: mockUser, 
@@ -194,8 +191,7 @@ describe("commentService", () => {
     });
 
     it("rejects user deleting other user's comment", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.comment.findUnique.mockResolvedValue({ 
+      mockPrisma.comment.findUnique.mockResolvedValue({ 
         id: "c1", 
         authorId: "u2", // Different author
         ticketId: "t1" 
@@ -208,8 +204,7 @@ describe("commentService", () => {
     });
 
     it("throws error for non-existent comment", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.comment.findUnique.mockResolvedValue(null);
+      mockPrisma.comment.findUnique.mockResolvedValue(null);
       
       await expect(commentService.softDelete({ 
         user: mockAdmin, 
@@ -218,13 +213,12 @@ describe("commentService", () => {
     });
 
     it("handles IP address in audit log", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.comment.findUnique.mockResolvedValue({ 
+      mockPrisma.comment.findUnique.mockResolvedValue({ 
         id: "c1", 
         authorId: "u1", 
         ticketId: "t1" 
       });
-      prisma.comment.update.mockResolvedValue({ id: "c1" });
+      mockPrisma.comment.update.mockResolvedValue({ id: "c1" });
       
       await commentService.softDelete({ 
         user: mockUser, 

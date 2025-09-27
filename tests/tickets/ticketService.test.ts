@@ -1,19 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ticketService } from "@/features/tickets/services/ticketService";
-import * as prismaModule from "@/lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 import * as emailModule from "@/features/tickets/email";
 import * as auditModule from "@/features/audit/audit";
 import * as notifyModule from "@/lib/email/notify";
 
-vi.mock("@/lib/db/prisma", () => ({ 
-  prisma: { 
-    ticket: { 
-      create: vi.fn(), 
-      findUnique: vi.fn(), 
-      update: vi.fn() 
-    } 
-  } 
+// Mock the prisma client
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    ticket: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn()
+    }
+  }
 }));
+
+// Get the mocked prisma instance
+const mockPrisma = vi.mocked(prisma);
 vi.mock("@/features/tickets/email", () => ({ 
   sendTicketCreatedEmail: vi.fn(), 
   sendStatusChangedEmail: vi.fn(), 
@@ -42,8 +46,7 @@ describe("ticketService", () => {
 
   describe("createTicket", () => {
     it("validates attachment key scope and creates ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.create.mockResolvedValue({ id: "t1", title: "Title" });
+      mockPrisma.ticket.create.mockResolvedValue({ id: "t1", title: "Title" });
       
       const res = await ticketService.createTicket({
         user: mockUser,
@@ -72,8 +75,7 @@ describe("ticketService", () => {
     });
 
     it("creates ticket without attachments", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.create.mockResolvedValue({ id: "t1", title: "Title" });
+      mockPrisma.ticket.create.mockResolvedValue({ id: "t1", title: "Title" });
       
       const res = await ticketService.createTicket({
         user: mockUser,
@@ -83,7 +85,7 @@ describe("ticketService", () => {
       });
       
       expect(res.id).toBe("t1");
-      expect(prisma.ticket.create).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.create).toHaveBeenCalledWith({
         data: {
           title: "Title",
           body: "Body",
@@ -97,9 +99,8 @@ describe("ticketService", () => {
 
   describe("updatePriority", () => {
     it("allows admin to update priority", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
-      prisma.ticket.update.mockResolvedValue({ id: "t1", priority: "high" });
+      mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", priority: "high" });
       
       const res = await ticketService.updatePriority({
         admin: mockAdmin,
@@ -128,8 +129,7 @@ describe("ticketService", () => {
     });
 
     it("returns same priority if unchanged", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket);
       
       const res = await ticketService.updatePriority({
         admin: mockAdmin,
@@ -138,12 +138,11 @@ describe("ticketService", () => {
       });
       
       expect(res.priority).toBe("normal");
-      expect(prisma.ticket.update).not.toHaveBeenCalled();
+      expect(mockPrisma.ticket.update).not.toHaveBeenCalled();
     });
 
     it("throws error for non-existent ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(null);
+      mockPrisma.ticket.findUnique.mockResolvedValue(null);
       
       await expect(ticketService.updatePriority({
         admin: mockAdmin,
@@ -155,9 +154,8 @@ describe("ticketService", () => {
 
   describe("updateStatus", () => {
     it("allows valid status transitions", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(mockTicket);
-      prisma.ticket.update.mockResolvedValue({ id: "t1", status: "in_progress", title: "Test Ticket", user: { email: "u@example.com" } });
+      mockPrisma.ticket.findUnique.mockResolvedValue(mockTicket);
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", status: "in_progress", title: "Test Ticket", user: { email: "u@example.com" } });
       
       const res = await ticketService.updateStatus({
         admin: mockAdmin,
@@ -171,9 +169,8 @@ describe("ticketService", () => {
     });
 
     it("allows admins to bypass status transition restrictions", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "closed" });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", status: "in_progress", title: "Test Ticket", user: { email: "u@example.com" } });
+      mockPrisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "closed" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", status: "in_progress", title: "Test Ticket", user: { email: "u@example.com" } });
       
       const res = await ticketService.updateStatus({
         admin: mockAdmin,
@@ -187,9 +184,8 @@ describe("ticketService", () => {
 
 
     it("sets resolvedAt when status becomes resolved", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "in_progress" });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", status: "resolved", title: "Test Ticket", user: { email: "u@example.com" } });
+      mockPrisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "in_progress" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", status: "resolved", title: "Test Ticket", user: { email: "u@example.com" } });
       
       await ticketService.updateStatus({
         admin: mockAdmin,
@@ -197,7 +193,7 @@ describe("ticketService", () => {
         status: "resolved",
       });
       
-      expect(prisma.ticket.update).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.update).toHaveBeenCalledWith({
         where: { id: "t1" },
         data: { 
           status: "resolved", 
@@ -209,9 +205,8 @@ describe("ticketService", () => {
     });
 
     it("sets closedAt when status becomes closed", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "resolved" });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", status: "closed", title: "Test Ticket", user: { email: "u@example.com" } });
+      mockPrisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "resolved" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", status: "closed", title: "Test Ticket", user: { email: "u@example.com" } });
       
       await ticketService.updateStatus({
         admin: mockAdmin,
@@ -219,7 +214,7 @@ describe("ticketService", () => {
         status: "closed",
       });
       
-      expect(prisma.ticket.update).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.update).toHaveBeenCalledWith({
         where: { id: "t1" },
         data: { 
           status: "closed", 
@@ -248,9 +243,8 @@ describe("ticketService", () => {
 
   describe("reopen", () => {
     it("allows admin to reopen any ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "closed" });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
+      mockPrisma.ticket.findUnique.mockResolvedValue({ ...mockTicket, status: "closed" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
       
       const res = await ticketService.reopen({
         actor: mockAdmin,
@@ -262,15 +256,14 @@ describe("ticketService", () => {
     });
 
     it("allows user to reopen their own resolved ticket within window", async () => {
-      const prisma = (prismaModule as any).prisma;
       const recentResolvedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000); // 5 days ago
-      prisma.ticket.findUnique.mockResolvedValue({ 
+      mockPrisma.ticket.findUnique.mockResolvedValue({ 
         ...mockTicket, 
         status: "resolved", 
         resolvedAt: recentResolvedAt,
         userId: "u1"
       });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
       
       const res = await ticketService.reopen({
         actor: mockUser,
@@ -282,9 +275,8 @@ describe("ticketService", () => {
     });
 
     it("rejects user reopening ticket outside window", async () => {
-      const prisma = (prismaModule as any).prisma;
       const oldResolvedAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000); // 20 days ago
-      prisma.ticket.findUnique.mockResolvedValue({ 
+      mockPrisma.ticket.findUnique.mockResolvedValue({ 
         ...mockTicket, 
         status: "resolved", 
         resolvedAt: oldResolvedAt,
@@ -298,8 +290,7 @@ describe("ticketService", () => {
     });
 
     it("rejects user reopening non-resolved ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ 
+      mockPrisma.ticket.findUnique.mockResolvedValue({ 
         ...mockTicket, 
         status: "in_progress",
         userId: "u1"
@@ -312,8 +303,7 @@ describe("ticketService", () => {
     });
 
     it("rejects user reopening other user's ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ 
+      mockPrisma.ticket.findUnique.mockResolvedValue({ 
         ...mockTicket, 
         status: "resolved",
         userId: "u2" // different user
@@ -326,8 +316,7 @@ describe("ticketService", () => {
     });
 
     it("throws error for non-existent ticket", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue(null);
+      mockPrisma.ticket.findUnique.mockResolvedValue(null);
       
       await expect(ticketService.reopen({
         actor: mockAdmin,
@@ -336,21 +325,20 @@ describe("ticketService", () => {
     });
 
     it("clears resolvedAt and closedAt when reopening", async () => {
-      const prisma = (prismaModule as any).prisma;
-      prisma.ticket.findUnique.mockResolvedValue({ 
+      mockPrisma.ticket.findUnique.mockResolvedValue({ 
         ...mockTicket, 
         status: "resolved",
         resolvedAt: new Date(),
         closedAt: new Date()
       });
-      prisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
+      mockPrisma.ticket.update.mockResolvedValue({ id: "t1", title: "Test Ticket" });
       
       await ticketService.reopen({
         actor: mockAdmin,
         ticketId: "t1",
       });
       
-      expect(prisma.ticket.update).toHaveBeenCalledWith({
+      expect(mockPrisma.ticket.update).toHaveBeenCalledWith({
         where: { id: "t1" },
         data: { 
           status: "reopened", 

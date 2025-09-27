@@ -4,8 +4,10 @@
 
 | Metric | Value |
 |--------|-------|
-| **Total Tests** | 72 |
-| **Passing** | 72 |
+| **Unit Tests** | 115 |
+| **Integration Tests** | 1 |
+| **Total Tests** | 116 |
+| **Passing** | 116 |
 | **Failing** | 0 |
 | **Success Rate** | 100% |
 
@@ -46,14 +48,14 @@ All PRD requirements tested and verified:
 
 ---
 
-## 🔗 Integration Tests (Streamlined)
+## 🔗 Integration Tests (Simplified)
 
-### **Comprehensive Integration Flow Test**
-- **integration-flow.test.ts**: Complete end-to-end workflow testing all system components:
+### **Comprehensive Integration Test**
+- **integration.test.ts**: Complete end-to-end workflow testing all system components:
   - ✅ **Ticket Creation**: User creates ticket with proper validation
   - ✅ **Comment System**: User and admin comments with RBAC
   - ✅ **Attachment Management**: File uploads with MinIO integration
-  - ✅ **Status Transitions**: Complete lifecycle (new → in_progress → resolved → closed)
+  - ✅ **Status Transitions**: Complete lifecycle (new → in_progress → resolved → closed → reopened)
   - ✅ **Priority Updates**: Admin priority management
   - ✅ **Reopen Functionality**: Both admin and user reopen scenarios
   - ✅ **Audit Logging**: Complete audit trail for all operations
@@ -61,18 +63,12 @@ All PRD requirements tested and verified:
   - ✅ **RBAC Security**: User isolation and admin privileges
   - ✅ **Data Persistence**: All data properly stored and retrieved
 
-### **MinIO-Specific Integration Test**
-- **attachments-minio.integration.test.ts**: Focused on MinIO functionality:
-  - ✅ **Presigned URLs**: Upload and download URL generation
-  - ✅ **File Operations**: End-to-end file handling
-  - ✅ **Key Scoping**: User-specific file organization
-  - ✅ **Database Integration**: Attachment metadata persistence
-
 ### **Test Architecture**
+- **Single Integration Test**: One comprehensive test covers all functionality
 - **Shared Containers**: Single PostgreSQL + MinIO containers for all tests
 - **Sequential Execution**: Tests run in order to share container state
-- **Efficient Resource Usage**: 90% reduction in test complexity while maintaining full coverage
-- **Comprehensive Coverage**: One flow test covers what 7 individual tests previously covered
+- **Efficient Resource Usage**: Simplified structure eliminates container lifecycle issues
+- **Comprehensive Coverage**: One test covers complete application workflow
 
 ---
 
@@ -94,5 +90,6 @@ All PRD requirements tested and verified:
 - **Teardown**: The container is stopped after the test run via `afterAll` in `tests/setup/global.ts`.
 - **Real services**: Tests use the real Prisma client and services. External email calls are mocked in the test files via `vi.mock("@/lib/email/resend")`.
 - **Run**:
-  - All tests: `pnpm test`
-  - Only integration: `pnpm test -- tests/integration`
+  - All tests: `pnpm test:all`
+  - Unit tests only: `pnpm test:unit`
+  - Integration test only: `pnpm test:integration`

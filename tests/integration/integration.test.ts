@@ -14,8 +14,8 @@ import { attachmentService } from "@/features/attachments/services/attachmentSer
 vi.mock("@/lib/email/resend", () => {
   return {
     resend: { emails: { send: vi.fn(async () => ({ id: "test" })) } },
-    EMAIL_FROM: "test@example.com",
-    ADMIN_EMAIL: "admin@example.com",
+    getEmailFrom: vi.fn(() => "test@example.com"),
+    getAdminEmail: vi.fn(() => "admin@example.com")
   };
 });
 

@@ -1,14 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { audit } from "@/features/audit/audit";
-import * as prismaModule from "@/lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 
-vi.mock("@/lib/db/prisma", () => ({ 
-  prisma: { 
-    auditLog: { 
+// Mock the prisma client
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    auditLog: {
       create: vi.fn()
     }
-  } 
+  }
 }));
+
+// Get the mocked prisma instance
+const mockPrisma = vi.mocked(prisma);
 
 describe("audit", () => {
   beforeEach(() => {
@@ -16,14 +20,13 @@ describe("audit", () => {
   });
 
   it("creates audit log entry with all fields", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     const changes = { from: "new", to: "in_progress" };
     
     await audit("user1", "ticket:status_change", "ticket", "t1", changes, "192.168.1.1");
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "ticket:status_change",
@@ -36,12 +39,11 @@ describe("audit", () => {
   });
 
   it("creates audit log entry with null actorId", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     await audit(null, "ticket:create", "ticket", "t1", undefined, null);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: null,
         action: "ticket:create",
@@ -54,12 +56,11 @@ describe("audit", () => {
   });
 
   it("creates audit log entry without changes", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     await audit("admin1", "ticket:reopen", "ticket", "t1");
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "admin1",
         action: "ticket:reopen",
@@ -72,12 +73,11 @@ describe("audit", () => {
   });
 
   it("creates audit log entry for comment actions", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     await audit("user1", "comment:add", "comment", "c1", { ticketId: "t1" });
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "comment:add",
@@ -90,13 +90,12 @@ describe("audit", () => {
   });
 
   it("creates audit log entry for attachment actions", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     const changes = { count: 2 };
     await audit("user1", "attachment:add", "attachment", "a1", changes, "10.0.0.1");
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "attachment:add",
@@ -109,8 +108,7 @@ describe("audit", () => {
   });
 
   it("handles complex changes object", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     const complexChanges = {
       from: "new",
@@ -121,7 +119,7 @@ describe("audit", () => {
     
     await audit("admin1", "ticket:status_change", "ticket", "t1", complexChanges);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "admin1",
         action: "ticket:status_change",
@@ -139,12 +137,11 @@ describe("audit", () => {
   });
 
   it("handles empty string IP as undefined", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     await audit("user1", "ticket:create", "ticket", "t1", undefined, "");
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "ticket:create",
@@ -157,12 +154,11 @@ describe("audit", () => {
   });
 
   it("handles null IP as undefined", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     await audit("user1", "ticket:create", "ticket", "t1", undefined, null);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "ticket:create",
@@ -175,8 +171,7 @@ describe("audit", () => {
   });
 
   it("serializes changes object correctly", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     const changes = { 
       from: "new", 
@@ -187,7 +182,7 @@ describe("audit", () => {
     await audit("user1", "ticket:status_change", "ticket", "t1", changes);
 
     // The function should deep clone the changes object using JSON.parse(JSON.stringify())
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "user1",
         action: "ticket:status_change",
@@ -200,14 +195,13 @@ describe("audit", () => {
   });
 
   it("handles all valid target types", async () => {
-    const prisma = (prismaModule as any).prisma;
-    prisma.auditLog.create.mockResolvedValue({ id: "audit1" });
+    mockPrisma.auditLog.create.mockResolvedValue({ id: "audit1" });
 
     // Test all valid target types from the type definition
     await audit("user1", "ticket:create", "ticket", "t1");
     await audit("user1", "comment:add", "comment", "c1");
     await audit("user1", "attachment:add", "attachment", "a1");
 
-    expect(prisma.auditLog.create).toHaveBeenCalledTimes(3);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledTimes(3);
   });
 });

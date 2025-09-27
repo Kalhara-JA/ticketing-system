@@ -9,11 +9,11 @@ export default defineConfig({
     setupFiles: ['tests/setup/env.ts', 'tests/setup/global.ts'],
     hookTimeout: 300000, // 5 minutes for container startup
     testTimeout: 120000,
-    // Run integration tests sequentially to share containers
-    pool: 'forks',
+    // Run integration tests in a single process to share containers
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        singleFork: true, // Use single process for integration tests
+      threads: {
+        singleThread: true, // Use single thread for integration tests
       },
     },
     // Ensure tests run in order for integration flow

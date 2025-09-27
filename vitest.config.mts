@@ -10,5 +10,12 @@ export default defineConfig({
     // Standard timeouts for unit tests
     hookTimeout: 10000,
     testTimeout: 10000,
+    // Only include our project tests, exclude node_modules and integration tests
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    exclude: [
+      'tests/integration/**',
+      'node_modules/**',
+      '**/node_modules/**'
+    ],
   },
 })
