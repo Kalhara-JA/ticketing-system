@@ -1,5 +1,5 @@
 // Shared container management for integration tests
-import { startTestDb, stopTestDb } from "./testDb";
+import { startTestDb, stopTestDb } from "./testdb";
 import { startTestMinio, stopTestMinio } from "./testMinio";
 import { __resetEnvCacheForTests } from "@/lib/validation/env";
 import { resetMinioClients } from "@/lib/storage/minio";
