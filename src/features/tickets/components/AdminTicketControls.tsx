@@ -10,6 +10,11 @@ import { updateTicketPriorityAction, updateTicketStatusAction } from "@/features
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import type { $Enums } from "../../../../generated/prisma";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const statuses = ["new", "in_progress", "waiting_on_user", "resolved", "closed", "reopened"] as const;
 const priorities = ["low", "normal", "high", "urgent"] as const;
@@ -54,70 +59,74 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
     };
 
     return (
-        <div className="relative">
-            <button
-                type="button"
-                className="btn btn-outline btn-md"
-                onClick={() => setOpen((v) => !v)}
-                aria-expanded={open}
-                aria-haspopup="dialog"
-            >
-                Edit
-            </button>
-
-            {open && (
-                <div className="absolute right-0 z-10 mt-2 w-80 rounded-lg border bg-white p-4 shadow-lg">
-                    <div className="space-y-3">
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="default">
+                    Edit
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Edit Ticket</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-900">Status</label>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value as $Enums.TicketStatus)}
-                                className="input"
-                            >
-                                {statuses.map(s => (
-                                    <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
-                                ))}
-                            </select>
+                            <Label htmlFor="status">Status</Label>
+                            <Select value={status} onValueChange={(value) => setStatus(value as $Enums.TicketStatus)}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statuses.map(s => (
+                                        <SelectItem key={s} value={s}>
+                                            {s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-900">Priority</label>
-                            <select
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value as $Enums.Priority)}
-                                className="input"
-                            >
-                                {priorities.map(p => (
-                                    <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                                ))}
-                            </select>
+                            <Label htmlFor="priority">Priority</Label>
+                            <Select value={priority} onValueChange={(value) => setPriority(value as $Enums.Priority)}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {priorities.map(p => (
+                                        <SelectItem key={p} value={p}>
+                                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
-
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                            <button
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                            <Button
                                 type="button"
-                                className="btn btn-ghost btn-sm"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => { setStatus(currentStatus); setPriority(currentPriority); setOpen(false); }}
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
-                                className="btn btn-primary btn-sm"
+                                size="sm"
                                 disabled={!hasChanges || isPending}
                                 onClick={saveAll}
                             >
                                 Save changes
-                            </button>
+                            </Button>
                         </div>
 
-                        {isPending && <p className="text-sm text-gray-600">Saving…</p>}
-                    </div>
-                </div>
-            )}
-        </div>
+                        {isPending && <p className="text-sm text-muted-foreground">Saving…</p>}
+                    </CardContent>
+                </Card>
+            </PopoverContent>
+        </Popover>
     );
 }
 

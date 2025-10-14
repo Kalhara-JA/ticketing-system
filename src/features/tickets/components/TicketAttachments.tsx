@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { removeAttachmentAction } from "@/features/tickets/actions/userTicket";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { Button } from "@/components/ui/button";
 
 export default function TicketAttachments({
   items,
@@ -105,7 +106,7 @@ export default function TicketAttachments({
   }, [preview?.blobUrl]);
   return (
     <div className="card p-6">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Attachments</h2>
+      <h2 className="mb-4 text-lg font-semibold text-foreground">Attachments</h2>
       {items.length ? (
         <div className="space-y-2">
           {items.map((a) => {
@@ -113,55 +114,68 @@ export default function TicketAttachments({
             const allowDelete = !!canDelete || (!!currentUserId && a.uploadedById === currentUserId);
             return (
               <div key={a.id} className="flex items-center gap-3 rounded-md border p-3">
-                <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-600">📎</span>
+                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                  <span className="text-xs font-medium text-muted-foreground">📎</span>
                 </div>
                 <div className="flex-1">
-                  <a className="font-medium text-gray-900 hover:text-blue-600 transition-colors" href={urlFor(a)} target="_blank" rel="noopener noreferrer">
+                  <a className="font-medium text-foreground hover:text-primary transition-colors" href={urlFor(a)} target="_blank" rel="noopener noreferrer">
                     {a.filename}
                   </a>
                 </div>
                 <div className="flex gap-2">
                   {isImage(a.filename) ? (
-                    <button
-                      className="btn btn-ghost btn-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => openPreview(a)}
                     >
                       Preview
-                    </button>
+                    </Button>
                   ) : isPdf(a.filename) ? (
-                    <a
-                      className="btn btn-ghost btn-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      href={urlFor(a)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
                     >
-                      Open
-                    </a>
+                      <a
+                        href={urlFor(a)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open
+                      </a>
+                    </Button>
                   ) : null}
-                  <a
-                    className="btn btn-ghost btn-sm text-green-600 hover:text-green-700 hover:bg-green-50"
-                    href={urlFor(a)}
-                    download={a.filename}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
                   >
-                    Download
-                  </a>
+                    <a
+                      href={urlFor(a)}
+                      download={a.filename}
+                    >
+                      Download
+                    </a>
+                  </Button>
                 </div>
                 {allowDelete && (
-                  <button
-                    className="btn btn-ghost btn-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDeleteClick(a.id, a.filename)}
                     disabled={isPending}
+                    className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                   >
                     Delete
-                  </button>
+                  </Button>
                 )}
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-gray-600">No attachments yet.</p>
+        <p className="text-muted-foreground">No attachments yet.</p>
       )}
       {after ? <div className="mt-4">{after}</div> : null}
       

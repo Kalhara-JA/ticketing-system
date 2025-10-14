@@ -8,6 +8,7 @@ import { useTransition } from "react";
 import { reopenTicketAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
 
 export default function ReopenButton({ ticketId }: { ticketId: string }) {
     const [isPending, startTransition] = useTransition();
@@ -34,9 +35,9 @@ export default function ReopenButton({ ticketId }: { ticketId: string }) {
 
     return (
         <div className="space-y-1">
-            <button onClick={doReopen} className="rounded-md border px-3 py-1" disabled={isPending}>
+            <Button onClick={doReopen} variant="outline" size="sm" disabled={isPending}>
                 {isPending ? "Reopening…" : "Reopen"}
-            </button>
+            </Button>
         </div>
     );
 }

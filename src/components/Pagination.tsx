@@ -3,7 +3,15 @@
  * Pagination component with smart page range calculation and ellipsis
  */
 
-import Link from "next/link";
+import {
+  Pagination as ShadcnPagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface PaginationProps {
     currentPage: number;
@@ -62,64 +70,53 @@ export default function Pagination({
     };
 
     return (
-        <div className="flex items-center justify-center gap-2 mt-6">
-            {/* Previous Button */}
-            {hasPreviousPage ? (
-                <Link
-                    href={getPageUrl(currentPage - 1)}
-                    className="btn btn-outline btn-sm"
-                >
-                    ← Previous
-                </Link>
-            ) : (
-                <span className="btn btn-outline btn-sm opacity-50 cursor-not-allowed">
-                    ← Previous
-                </span>
-            )}
+        <div className="flex items-center justify-center mt-6">
+            <ShadcnPagination>
+                <PaginationContent>
+                    {/* Previous Button */}
+                    <PaginationItem>
+                        {hasPreviousPage ? (
+                            <PaginationPrevious href={getPageUrl(currentPage - 1)} />
+                        ) : (
+                            <PaginationPrevious href="#" className="pointer-events-none opacity-50" />
+                        )}
+                    </PaginationItem>
 
-            {/* Page Numbers */}
-            <div className="flex items-center gap-1">
-                {getVisiblePages().map((page, index) => {
-                    if (page === "...") {
+                    {/* Page Numbers */}
+                    {getVisiblePages().map((page, index) => {
+                        if (page === "...") {
+                            return (
+                                <PaginationItem key={`dots-${index}`}>
+                                    <PaginationEllipsis />
+                                </PaginationItem>
+                            );
+                        }
+
+                        const pageNum = page as number;
+                        const isCurrentPage = pageNum === currentPage;
+
                         return (
-                            <span key={`dots-${index}`} className="px-3 py-1 text-gray-500">
-                                ...
-                            </span>
+                            <PaginationItem key={pageNum}>
+                                <PaginationLink
+                                    href={getPageUrl(pageNum)}
+                                    isActive={isCurrentPage}
+                                >
+                                    {pageNum}
+                                </PaginationLink>
+                            </PaginationItem>
                         );
-                    }
+                    })}
 
-                    const pageNum = page as number;
-                    const isCurrentPage = pageNum === currentPage;
-
-                    return (
-                        <Link
-                            key={pageNum}
-                            href={getPageUrl(pageNum)}
-                            className={`btn btn-sm ${
-                                isCurrentPage
-                                    ? "btn-primary"
-                                    : "btn-outline"
-                            }`}
-                        >
-                            {pageNum}
-                        </Link>
-                    );
-                })}
-            </div>
-
-            {/* Next Button */}
-            {hasNextPage ? (
-                <Link
-                    href={getPageUrl(currentPage + 1)}
-                    className="btn btn-outline btn-sm"
-                >
-                    Next →
-                </Link>
-            ) : (
-                <span className="btn btn-outline btn-sm opacity-50 cursor-not-allowed">
-                    Next →
-                </span>
-            )}
+                    {/* Next Button */}
+                    <PaginationItem>
+                        {hasNextPage ? (
+                            <PaginationNext href={getPageUrl(currentPage + 1)} />
+                        ) : (
+                            <PaginationNext href="#" className="pointer-events-none opacity-50" />
+                        )}
+                    </PaginationItem>
+                </PaginationContent>
+            </ShadcnPagination>
         </div>
     );
 }

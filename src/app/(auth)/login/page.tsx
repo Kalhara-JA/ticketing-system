@@ -13,6 +13,9 @@ import { useEffect } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { authClient } from "@/lib/auth/client";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const LoginSchema = z.object({
   identifier: z.string().min(3, "Enter your email or username"),
@@ -37,7 +40,7 @@ export default function LoginPage() {
     }
   }, [sp, addToast]);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(LoginSchema),
   });
 
@@ -88,39 +91,55 @@ export default function LoginPage() {
 
   return (
     <AuthCard title="Log in">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-900">Email or Username</label>
-          <input 
-            {...register("identifier")} 
-            className="input" 
-            placeholder="Enter your email or username"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="identifier"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email or Username</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="Enter your email or username"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.identifier && <p className="text-sm text-red-600">{errors.identifier.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-900">Password</label>
-          <input 
-            {...register("password")} 
-            type="password" 
-            className="input" 
-            placeholder="Enter your password"
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="password" 
+                    placeholder="Enter your password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
-        </div>
 
-        <button 
-          disabled={isSubmitting} 
-          className="btn btn-primary btn-md w-full"
-        >
-          {isSubmitting ? "Signing in..." : "Continue"}
-        </button>
+          <Button 
+            type="submit"
+            disabled={form.formState.isSubmitting} 
+            className="w-full"
+          >
+            {form.formState.isSubmitting ? "Signing in..." : "Continue"}
+          </Button>
 
-
-        <p className="text-center text-sm text-gray-600">
-          No account? <a className="font-medium text-blue-600 hover:underline" href="/signup">Create one</a>
-        </p>
-      </form>
+          <p className="text-center text-sm text-muted-foreground">
+            No account? <a className="font-medium text-primary hover:underline" href="/signup">Create one</a>
+          </p>
+        </form>
+      </Form>
     </AuthCard>
   );
 }

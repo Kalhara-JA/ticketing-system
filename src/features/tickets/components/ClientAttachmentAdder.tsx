@@ -13,6 +13,9 @@ import { z } from "zod";
 import { addAttachmentsAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 
 export default function ClientAttachmentAdder({ ticketId }: { ticketId: string }) {
     const [uploading, setUploading] = useState(false);
@@ -109,16 +112,29 @@ export default function ClientAttachmentAdder({ ticketId }: { ticketId: string }
     };
 
     return (
-        <div className="space-y-1">
-            <label className="block text-sm font-medium">Add attachments</label>
-            <input 
-                type="file" 
-                multiple 
-                onChange={(e) => onFilesPicked(e.currentTarget.files)}
-                disabled={uploading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            {uploading && <p className="text-sm text-blue-600">Uploading…</p>}
+        <div className="space-y-2">
+            <Label htmlFor="attachments">Add attachments</Label>
+            <div className="flex items-center gap-2">
+                <input 
+                    id="attachments"
+                    type="file" 
+                    multiple 
+                    onChange={(e) => onFilesPicked(e.currentTarget.files)}
+                    disabled={uploading}
+                    className="hidden"
+                />
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('attachments')?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2"
+                >
+                    <Upload className="h-4 w-4" />
+                    Choose Files
+                </Button>
+                {uploading && <p className="text-sm text-muted-foreground">Uploading…</p>}
+            </div>
         </div>
     );
 }

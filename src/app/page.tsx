@@ -4,6 +4,8 @@
  */
 
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function HomePage() {
   return (
@@ -16,11 +18,11 @@ export default function HomePage() {
       </div>
 
       <div className="flex justify-center">
-        <div className="card p-8 space-y-6 max-w-md w-full">
-          <div className="text-center space-y-4">
+        <Card className="p-8 space-y-6 max-w-md w-full">
+          <CardContent className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <svg className="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
@@ -29,20 +31,19 @@ export default function HomePage() {
             <p className="text-muted-foreground">
               Submit and track your service requests. Create new tickets, monitor progress, and communicate with our support team.
             </p>
-          </div>
-          <Link 
-            href="/login" 
-            className="btn btn-primary btn-lg w-full"
-          >
-            Get Started
-          </Link>
-        </div>
+            <Button asChild size="lg" className="w-full">
+              <Link href="/login">
+                Get Started
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link className="font-medium text-blue-600 hover:underline" href="/login">
+          <Link className="font-medium text-primary hover:underline" href="/login">
             Sign in here
           </Link>
         </p>

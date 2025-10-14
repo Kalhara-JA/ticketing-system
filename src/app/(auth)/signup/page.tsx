@@ -13,6 +13,9 @@ import { authClient } from "@/lib/auth/client";
 import { AuthCard } from "@/components/AuthCard";
 import { USERNAME_REGEX } from "@/lib/validation/constants";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const SignUpSchema = z.object({
     email: z.string().email(),
@@ -27,7 +30,7 @@ type FormData = z.infer<typeof SignUpSchema>;
 export default function SignUpPage() {
     const router = useRouter();
     const { addToast } = useToast();
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const form = useForm<FormData>({
         resolver: zodResolver(SignUpSchema),
     });
 
@@ -67,67 +70,88 @@ export default function SignUpPage() {
 
     return (
         <AuthCard title="Create your account">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Email</label>
-                    <input 
-                        {...register("email")} 
-                        type="email" 
-                        className="input" 
-                        placeholder="Enter your email address"
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input type="email" placeholder="Enter your email address" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
-                    {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Username</label>
-                    <input 
-                        {...register("username")} 
-                        className="input" 
-                        placeholder="Choose a username"
+                    <FormField
+                        control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Choose a username" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
-                    {errors.username && <p className="text-sm text-red-600">{errors.username.message}</p>}
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Name (optional)</label>
-                    <input 
-                        {...register("name")} 
-                        className="input" 
-                        placeholder="Enter your full name"
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name (optional)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Enter your full name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Password</label>
-                    <input 
-                        {...register("password")} 
-                        type="password" 
-                        className="input" 
-                        placeholder="Create a password"
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Password</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Create a password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
-                    {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-900">Confirm password</label>
-                    <input 
-                        {...register("confirm")} 
-                        type="password" 
-                        className="input" 
-                        placeholder="Confirm your password"
+                    <FormField
+                        control={form.control}
+                        name="confirm"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Confirm password</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Confirm your password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
-                    {errors.confirm && <p className="text-sm text-red-600">{errors.confirm.message}</p>}
-                </div>
 
 
-                <button 
-                    disabled={isSubmitting} 
-                    className="btn btn-primary btn-md w-full"
-                >
-                    {isSubmitting ? "Creating..." : "Create account"}
-                </button>
+                    <Button 
+                        type="submit" 
+                        disabled={form.formState.isSubmitting} 
+                        className="w-full"
+                    >
+                        {form.formState.isSubmitting ? "Creating..." : "Create account"}
+                    </Button>
 
-                <p className="text-center text-sm text-gray-600">
-                    Already have an account? <a className="font-medium text-blue-600 hover:underline" href="/login">Log in</a>
-                </p>
-            </form>
+                    <p className="text-center text-sm text-muted-foreground">
+                        Already have an account? <a className="font-medium text-primary hover:underline" href="/login">Log in</a>
+                    </p>
+                </form>
+            </Form>
         </AuthCard>
     );
 }

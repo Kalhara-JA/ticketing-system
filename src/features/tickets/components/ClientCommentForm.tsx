@@ -13,12 +13,15 @@ import { CommentInput } from "@/lib/validation/ticketSchemas";
 import { addCommentAction } from "@/features/tickets/actions/userTicket";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 export default function ClientCommentForm({ ticketId }: { ticketId: string }) {
     const router = useRouter();
     const { addToast } = useToast();
     const schema = CommentInput;
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof schema>>({
+    const form = useForm<z.infer<typeof schema>>({
         resolver: zodResolver(schema),
         defaultValues: { ticketId, body: "" },
     });
@@ -32,7 +35,7 @@ export default function ClientCommentForm({ ticketId }: { ticketId: string }) {
                 title: "Comment added",
                 message: "Your comment has been successfully added to the ticket."
             });
-            reset({ ticketId, body: "" });
+            form.reset({ ticketId, body: "" });
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             addToast({
@@ -44,12 +47,32 @@ export default function ClientCommentForm({ ticketId }: { ticketId: string }) {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
-            <textarea {...register("body")} rows={4} className="w-full rounded-md border p-2" placeholder="Write a comment..." />
-            {errors.body && <p className="text-sm text-red-600">{errors.body.message}</p>}
-            <button className="rounded-md bg-black px-3 py-1 text-white disabled:opacity-50" disabled={isSubmitting || isPending}>
-                {isSubmitting ? "Posting…" : "Post comment"}
-            </button>
-        </form>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="body"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Textarea 
+                                    {...field} 
+                                    rows={4} 
+                                    placeholder="Write a comment..." 
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <Button 
+                    type="submit" 
+                    disabled={form.formState.isSubmitting || isPending}
+                    className="w-full"
+                >
+                    {form.formState.isSubmitting ? "Posting…" : "Post comment"}
+                </Button>
+            </form>
+        </Form>
     );
 }

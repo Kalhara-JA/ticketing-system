@@ -5,6 +5,8 @@
 
 import { requireAdmin } from "@/lib/auth/session";
 import { searchTicketsFTS } from "@/features/tickets/repositories/metricsRepository";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default async function FTSDev({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
     await requireAdmin();
@@ -15,8 +17,8 @@ export default async function FTSDev({ searchParams }: { searchParams: Promise<{
         <div className="space-y-3">
             <h1 className="text-xl font-semibold">FTS Test</h1>
             <form className="flex gap-2" action="/admin/dev/fts" method="get">
-                <input name="q" defaultValue={q} placeholder="search…" className="rounded-md border p-2" />
-                <button className="rounded-md border px-3 py-2">Run</button>
+                <Input name="q" defaultValue={q} placeholder="search…" />
+                <Button type="submit">Run</Button>
             </form>
             <ul className="list-disc pl-5 text-sm">
                 {rows.map((r) => (

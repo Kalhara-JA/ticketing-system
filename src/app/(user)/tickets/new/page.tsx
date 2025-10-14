@@ -16,6 +16,10 @@ import { validateFileContent } from "@/lib/validation/fileValidation";
 import { createTicketAction } from "@/features/tickets/actions/createTicket";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_COUNT } from "@/lib/validation/constants";
 import { useToast } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 type FormData = z.infer<typeof CreateTicketInput>;
 
@@ -25,7 +29,7 @@ export default function NewTicketPage() {
     const [uploading, setUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const form = useForm<FormData>({
         resolver: zodResolver(CreateTicketInput),
         defaultValues: { title: "", body: "", attachments: [] },
         mode: "onChange",
@@ -160,33 +164,50 @@ export default function NewTicketPage() {
 
     return (
         <div className="container mx-auto space-y-6 p-6">
-            <div>
-                <h1 className="text-3xl font-bold text-foreground">Create New Ticket</h1>
-                <p className="text-muted-foreground">Submit a new service request</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground">Create New Ticket</h1>
+                    <p className="text-muted-foreground">Submit a new service request</p>
+                </div>
+                <Button variant="outline" asChild>
+                    <Link href="/tickets">Back to Tickets</Link>
+                </Button>
             </div>
 
             <div className="card p-6">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Title</label>
-                        <input 
-                            {...register("title")} 
-                            className="input" 
-                            placeholder="Brief description of your request"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="title"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Title</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Brief description of your request" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                        {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Description</label>
-                        <textarea 
-                            {...register("body")} 
-                            rows={6} 
-                            className="input resize-none" 
-                            placeholder="Provide detailed information about your request..."
+                        <FormField
+                            control={form.control}
+                            name="body"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea 
+                                            rows={6} 
+                                            placeholder="Provide detailed information about your request..."
+                                            {...field} 
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                        {errors.body && <p className="text-sm text-red-600">{errors.body.message}</p>}
-                    </div>
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
@@ -199,12 +220,12 @@ export default function NewTicketPage() {
                             type="file" 
                             multiple 
                             onChange={(e) => onFilesPicked(e.currentTarget.files)} 
-                            disabled={uploading || isSubmitting}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed" 
+                            disabled={uploading || form.formState.isSubmitting}
+                            className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed" 
                         />
                         {uploading && (
-                            <div className="flex items-center gap-2 text-sm text-blue-600">
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                            <div className="flex items-center gap-2 text-sm text-primary">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                                 Uploading files...
                             </div>
                         )}
@@ -213,9 +234,9 @@ export default function NewTicketPage() {
                                 <p className="text-sm font-medium text-foreground">Selected files:</p>
                                 <div className="space-y-2">
                                     {selectedFiles.map((file, i) => (
-                                        <div key={i} className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                                                <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div key={i} className="flex items-center gap-3 rounded-md border bg-muted/50 p-3">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                                <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                 </svg>
                                             </div>
@@ -226,7 +247,7 @@ export default function NewTicketPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => removeAttachment(i)}
-                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                                                 title="Remove file"
                                             >
                                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,21 +261,20 @@ export default function NewTicketPage() {
                         )}
                     </div>
 
-                    <div className="flex gap-3">
-                        <button
-                            disabled={isSubmitting || uploading}
-                            className="btn btn-primary btn-md flex-1"
-                        >
-                            {uploading ? "Uploading files..." : isSubmitting ? "Creating..." : "Create Ticket"}
-                        </button>
-                        <Link 
-                            href="/tickets" 
-                            className="btn btn-outline btn-md"
-                        >
-                            Cancel
-                        </Link>
-                    </div>
-                </form>
+                        <div className="flex gap-3">
+                            <Button
+                                type="submit"
+                                disabled={form.formState.isSubmitting || uploading}
+                                className="flex-1"
+                            >
+                                {uploading ? "Uploading files..." : form.formState.isSubmitting ? "Creating..." : "Create Ticket"}
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/tickets">Cancel</Link>
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
             </div>
         </div>
     );
