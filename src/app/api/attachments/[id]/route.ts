@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { minio, getBucket } from "@/lib/storage/minio";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/validation/env";
 
 /**
  * Streams attachment file from MinIO storage with proper authorization
@@ -17,6 +18,15 @@ import { logger } from "@/lib/logger";
  * @throws {Error} When user lacks permission or file not found
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    // Check if attachments are enabled
+    const env = getEnv();
+    if (!env.ENABLE_ATTACHMENTS) {
+        logger.error("Attachment feature disabled - download request blocked", {
+            endpoint: "/api/attachments/[id]",
+        });
+        return NextResponse.json({ error: "Attachment functionality is currently disabled" }, { status: 403 });
+    }
+
     const session = await getSession();
     if (!session) {
         logger.error("Unauthorized attachment download request", {

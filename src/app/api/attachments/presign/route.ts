@@ -10,6 +10,7 @@ import { getSession } from "@/lib/auth/session";
 import { ATTACHMENT_ALLOWED_TYPES, ATTACHMENT_MAX_BYTES } from "@/lib/validation/constants";
 import { logger } from "@/lib/logger";
 import { sanitizeFilename } from "@/lib/validation/sanitize";
+import { getEnv } from "@/lib/validation/env";
 
 /**
  * Generates a presigned URL for secure file upload to MinIO storage
@@ -18,6 +19,15 @@ import { sanitizeFilename } from "@/lib/validation/sanitize";
  * @throws {Error} When authentication fails or file validation fails
  */
 export async function POST(req: Request) {
+    // Check if attachments are enabled
+    const env = getEnv();
+    if (!env.ENABLE_ATTACHMENTS) {
+        logger.error("Attachment feature disabled - presign request blocked", {
+            endpoint: "/api/attachments/presign",
+        });
+        return NextResponse.json({ error: "Attachment functionality is currently disabled" }, { status: 403 });
+    }
+
     const session = await getSession();
     if (!session) {
         logger.error("Unauthorized presign request", {

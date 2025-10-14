@@ -12,6 +12,7 @@ import { commentService } from "@/features/comments/services/commentService";
 import { attachmentService } from "@/features/attachments/services/attachmentService";
 import { AttachmentMeta, CommentInput } from "@/lib/validation/ticketSchemas";
 import { ticketService } from "@/features/tickets/services/ticketService";
+import { getEnv } from "@/lib/validation/env";
 import type { $Enums } from "../../../../generated/prisma";
 
 /**
@@ -47,6 +48,12 @@ export async function deleteCommentAction(commentId: string) {
  * @throws {Error} When validation fails or attachment limit exceeded
  */
 export async function addAttachmentsAction(ticketId: string, files: z.infer<typeof AttachmentMeta>[]) {
+    // Check if attachments are enabled
+    const env = getEnv();
+    if (!env.ENABLE_ATTACHMENTS) {
+        throw new Error("Attachment functionality is currently disabled.");
+    }
+
     const user = await requireUser();
     const ip = (await headers()).get("x-forwarded-for") ?? null;
     return attachmentService.add({ user, ticketId, files, ip });
@@ -59,6 +66,12 @@ export async function addAttachmentsAction(ticketId: string, files: z.infer<type
  * @throws {Error} When user lacks permission or attachment not found
  */
 export async function removeAttachmentAction(attachmentId: string) {
+    // Check if attachments are enabled
+    const env = getEnv();
+    if (!env.ENABLE_ATTACHMENTS) {
+        throw new Error("Attachment functionality is currently disabled.");
+    }
+
     const user = await requireUser();
     const ip = (await headers()).get("x-forwarded-for") ?? null;
     return attachmentService.remove({ user, attachmentId, ip });

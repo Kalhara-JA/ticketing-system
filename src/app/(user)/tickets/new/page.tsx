@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useConfig } from "@/hooks/useConfig";
 
 type FormData = z.infer<typeof CreateTicketInput>;
 
@@ -28,6 +29,7 @@ export default function NewTicketPage() {
     const { addToast } = useToast();
     const [uploading, setUploading] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const { config } = useConfig();
 
     const form = useForm<FormData>({
         resolver: zodResolver(CreateTicketInput),
@@ -38,6 +40,16 @@ export default function NewTicketPage() {
     // Business logic: File validation and selection (upload happens on form submission)
     const onFilesPicked = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
+        
+        // Check if attachments are enabled
+        if (!config?.enableAttachments) {
+            addToast({
+                type: "error",
+                title: "Attachments disabled",
+                message: "Attachment functionality is currently disabled."
+            });
+            return;
+        }
 
         // Security: Enforce attachment count limit
         const curr = selectedFiles.length;
@@ -98,9 +110,9 @@ export default function NewTicketPage() {
     const onSubmit = async (data: FormData) => {
         setUploading(true);
         try {
-            // Upload files first if any are selected
+            // Upload files first if any are selected and attachments are enabled
             const attachmentMetas: z.infer<typeof AttachmentMeta>[] = [];
-            if (selectedFiles.length > 0) {
+            if (selectedFiles.length > 0 && config?.enableAttachments) {
                 for (const f of selectedFiles) {
                     // Security: Get presigned URL for secure upload
                     const r = await fetch("/api/attachments/presign", {
@@ -209,57 +221,59 @@ export default function NewTicketPage() {
                             )}
                         />
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                            Attachments
-                        </label>
-                        <p className="text-xs text-muted-foreground">
-                            Supported formats: PDF, PNG, JPG. Maximum {ATTACHMENT_MAX_COUNT} files, {Math.floor(ATTACHMENT_MAX_BYTES / 1024 / 1024)}MB each.
-                        </p>
-                        <input 
-                            type="file" 
-                            multiple 
-                            onChange={(e) => onFilesPicked(e.currentTarget.files)} 
-                            disabled={uploading || form.formState.isSubmitting}
-                            className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        />
-                        {uploading && (
-                            <div className="flex items-center gap-2 text-sm text-primary">
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                Uploading files...
-                            </div>
-                        )}
-                        {selectedFiles.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                                <p className="text-sm font-medium text-foreground">Selected files:</p>
-                                <div className="space-y-2">
-                                    {selectedFiles.map((file, i) => (
-                                        <div key={i} className="flex items-center gap-3 rounded-md border bg-muted/50 p-3">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                                                <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium text-foreground">{file.name}</p>
-                                                <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeAttachment(i)}
-                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-                                                title="Remove file"
-                                            >
-                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    ))}
+                    {config?.enableAttachments && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                                Attachments
+                            </label>
+                            <p className="text-xs text-muted-foreground">
+                                Supported formats: PDF, PNG, JPG. Maximum {ATTACHMENT_MAX_COUNT} files, {Math.floor(ATTACHMENT_MAX_BYTES / 1024 / 1024)}MB each.
+                            </p>
+                            <input 
+                                type="file" 
+                                multiple 
+                                onChange={(e) => onFilesPicked(e.currentTarget.files)} 
+                                disabled={uploading || form.formState.isSubmitting}
+                                className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed" 
+                            />
+                            {uploading && (
+                                <div className="flex items-center gap-2 text-sm text-primary">
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                    Uploading files...
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                            {selectedFiles.length > 0 && (
+                                <div className="mt-3 space-y-2">
+                                    <p className="text-sm font-medium text-foreground">Selected files:</p>
+                                    <div className="space-y-2">
+                                        {selectedFiles.map((file, i) => (
+                                            <div key={i} className="flex items-center gap-3 rounded-md border bg-muted/50 p-3">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                                    <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-foreground">{file.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeAttachment(i)}
+                                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                                                    title="Remove file"
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                         <div className="flex gap-3">
                             <Button

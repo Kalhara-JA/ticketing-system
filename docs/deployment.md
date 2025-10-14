@@ -86,6 +86,9 @@ MINIO_BUCKET=ticket-attachments
 # Application
 APP_URL=http://localhost:3000
 AUTO_CLOSE_DAYS=14
+
+# Feature Flags
+ENABLE_ATTACHMENTS=true  # Set to false to disable attachment functionality
 ```
 
 ## 🏗️ Production Setup
@@ -288,6 +291,64 @@ MINIO_BUCKET=your-production-bucket
 
 # Auto-close configuration
 AUTO_CLOSE_DAYS=14
+
+# Feature Flags
+ENABLE_ATTACHMENTS=true  # Set to false to disable attachment functionality
+```
+
+## 🚩 Feature Flags
+
+The application supports feature flags to control functionality:
+
+### `ENABLE_ATTACHMENTS`
+
+Controls attachment functionality across the entire application.
+
+**Configuration:**
+```bash
+# Enable attachments (default)
+ENABLE_ATTACHMENTS=true
+
+# Disable attachments
+ENABLE_ATTACHMENTS=false
+```
+
+**When Disabled:**
+- ✅ All attachment UI elements are hidden
+- ✅ Upload/download APIs return 403 Forbidden
+- ✅ Server actions throw clear error messages
+- ✅ No file storage infrastructure required
+- ⚠️ Existing attachments remain in database but inaccessible
+
+**Use Cases:**
+- **Compliance**: Deploy in environments that prohibit file uploads
+- **Simplified Setup**: Deploy without MinIO/S3 infrastructure
+- **Maintenance**: Temporarily disable during storage system maintenance
+- **Testing**: Test core functionality without file handling complexity
+
+**Deployment Examples:**
+
+**Minimal Deployment (No Attachments):**
+```bash
+# Disable attachments for simplified deployment
+ENABLE_ATTACHMENTS=false
+
+# MinIO configuration not required when disabled
+# MINIO_ENDPOINT=...
+# MINIO_ACCESS_KEY=...
+# MINIO_SECRET_KEY=...
+```
+
+**Full Deployment (With Attachments):**
+```bash
+# Enable attachments (default)
+ENABLE_ATTACHMENTS=true
+
+# Configure MinIO/S3 storage
+MINIO_ENDPOINT=your-storage-endpoint
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+MINIO_BUCKET=your-bucket-name
 ```
 
 ## 🔧 Troubleshooting

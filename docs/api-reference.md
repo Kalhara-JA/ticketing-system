@@ -155,10 +155,16 @@ Soft deletes a comment.
 
 ## 📎 Attachment Management
 
+> **⚠️ Feature Flag**: Attachment functionality can be disabled via the `ENABLE_ATTACHMENTS` environment variable. When disabled, all attachment-related endpoints return 403 Forbidden and UI elements are hidden.
+
 ### Server Actions
 
 #### `addAttachmentAction`
 Adds attachments to a ticket.
+
+**Feature Flag Behavior:**
+- When `ENABLE_ATTACHMENTS=false`: Throws error "Attachment functionality is currently disabled."
+- When `ENABLE_ATTACHMENTS=true` (default): Normal operation
 
 **Input Schema:**
 ```typescript
@@ -181,6 +187,10 @@ Adds attachments to a ticket.
 
 #### `removeAttachmentAction`
 Removes an attachment.
+
+**Feature Flag Behavior:**
+- When `ENABLE_ATTACHMENTS=false`: Throws error "Attachment functionality is currently disabled."
+- When `ENABLE_ATTACHMENTS=true` (default): Normal operation
 
 **Input Schema:**
 ```typescript
@@ -268,10 +278,16 @@ Gets full ticket details for admin.
 
 ## 📁 File Storage API
 
+> **⚠️ Feature Flag**: All file storage endpoints are disabled when `ENABLE_ATTACHMENTS=false`. They return HTTP 403 Forbidden with the message "Attachment functionality is currently disabled."
+
 ### MinIO Integration
 
 #### `POST /api/attachments/presign`
 Generates presigned URLs for file upload.
+
+**Feature Flag Behavior:**
+- When `ENABLE_ATTACHMENTS=false`: Returns 403 Forbidden
+- When `ENABLE_ATTACHMENTS=true` (default): Normal operation
 
 **Request:**
 ```typescript
@@ -293,6 +309,10 @@ Generates presigned URLs for file upload.
 
 #### `GET /api/attachments/[id]`
 Downloads an attachment file.
+
+**Feature Flag Behavior:**
+- When `ENABLE_ATTACHMENTS=false`: Returns 403 Forbidden
+- When `ENABLE_ATTACHMENTS=true` (default): Normal operation
 
 **Headers:**
 - `Authorization`: Bearer token or session cookie
@@ -456,6 +476,9 @@ MINIO_BUCKET="attachments"
 RESEND_API_KEY="..."
 ADMIN_EMAIL="admin@example.com"
 EMAIL_FROM="noreply@example.com"
+
+# Feature Flags
+ENABLE_ATTACHMENTS="true"  # Set to "false" to disable attachment functionality
 
 # Application
 NEXT_PUBLIC_APP_URL="http://localhost:3000"

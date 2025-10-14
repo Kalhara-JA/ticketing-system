@@ -11,6 +11,7 @@ import { removeAttachmentAction } from "@/features/tickets/actions/userTicket";
 import { useToast } from "@/components/Toast";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { Button } from "@/components/ui/button";
+import { useConfig } from "@/hooks/useConfig";
 
 export default function TicketAttachments({
   items,
@@ -26,6 +27,7 @@ export default function TicketAttachments({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { addToast } = useToast();
+  const { config, loading } = useConfig();
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     attachmentId: string;
@@ -33,6 +35,24 @@ export default function TicketAttachments({
   }>({ isOpen: false, attachmentId: "", filename: "" });
 
   const [preview, setPreview] = useState<{ open: boolean; url: string; filename: string; blobUrl?: string } | null>(null);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (preview?.blobUrl) {
+        URL.revokeObjectURL(preview.blobUrl);
+      }
+    };
+  }, [preview?.blobUrl]);
+
+  // Don't render if attachments are disabled
+  if (loading) {
+    return null; // or a loading spinner
+  }
+
+  if (!config?.enableAttachments) {
+    return null;
+  }
 
   const handleDeleteClick = (attachmentId: string, filename: string) => {
     setDeleteModal({ isOpen: true, attachmentId, filename });
@@ -95,15 +115,6 @@ export default function TicketAttachments({
     }
     setPreview(null);
   };
-
-  // Cleanup blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (preview?.blobUrl) {
-        URL.revokeObjectURL(preview.blobUrl);
-      }
-    };
-  }, [preview?.blobUrl]);
   return (
     <div className="card p-6">
       <h2 className="mb-4 text-lg font-semibold text-foreground">Attachments</h2>

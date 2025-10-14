@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { audit } from "@/features/audit/audit";
 import { logger } from "@/lib/logger";
+import { getEnv } from "@/lib/validation/env";
 
 // Security: User-specific storage key prefix for attachment isolation
 const PREFIX = (uid: string) => `u/${uid}/`;
@@ -37,6 +38,16 @@ export const attachmentService = {
         files: Array<{ name: string; key: string; size: number; contentType: string }>;
         ip?: string | null;
     }) {
+        // Check if attachments are enabled
+        const env = getEnv();
+        if (!env.ENABLE_ATTACHMENTS) {
+            logger.error("Attachment feature disabled", {
+                userId: opts.user.id,
+                ticketId: opts.ticketId,
+            });
+            throw new Error("Attachment functionality is currently disabled.");
+        }
+
         logger.attachmentOperation("add started", "new", opts.user.id, {
             ticketId: opts.ticketId,
             fileCount: opts.files.length,
@@ -97,6 +108,16 @@ export const attachmentService = {
     },
 
     async remove(opts: { user: { id: string; role: string }, attachmentId: string, ip?: string | null }) {
+        // Check if attachments are enabled
+        const env = getEnv();
+        if (!env.ENABLE_ATTACHMENTS) {
+            logger.error("Attachment feature disabled", {
+                userId: opts.user.id,
+                attachmentId: opts.attachmentId,
+            });
+            throw new Error("Attachment functionality is currently disabled.");
+        }
+
         logger.attachmentOperation("remove started", opts.attachmentId, opts.user.id, {
             userRole: opts.user.role,
             ip: opts.ip,

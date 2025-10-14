@@ -16,12 +16,23 @@ import { useToast } from "@/components/Toast";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
+import { useConfig } from "@/hooks/useConfig";
 
 export default function ClientAttachmentAdder({ ticketId }: { ticketId: string }) {
     const [uploading, setUploading] = useState(false);
     const [, startTransition] = useTransition();
     const router = useRouter();
     const { addToast } = useToast();
+    const { config, loading } = useConfig();
+
+    // Don't render if attachments are disabled
+    if (loading) {
+        return null; // or a loading spinner
+    }
+
+    if (!config?.enableAttachments) {
+        return null;
+    }
 
     const onFilesPicked = async (files: FileList | null) => {
         if (!files || files.length === 0) return;

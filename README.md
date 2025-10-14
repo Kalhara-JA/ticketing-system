@@ -106,7 +106,44 @@ MINIO_EXTERNAL_ENDPOINT="localhost"
 MINIO_EXTERNAL_PORT="9000"
 MINIO_EXTERNAL_SSL="false"
 
+# Feature Flags
+ENABLE_ATTACHMENTS="true"  # Set to "false" to disable attachment functionality
+
 ```
+
+---
+
+## Feature Flags
+
+The application supports feature flags to enable/disable specific functionality:
+
+### `ENABLE_ATTACHMENTS`
+
+Controls whether attachment functionality is available in the application.
+
+- **Default**: `true` (attachments enabled)
+- **Values**: `"true"` or `"false"` (string) or `true`/`false` (boolean)
+- **Effect when disabled**:
+  - All attachment UI elements are hidden from the frontend
+  - Attachment upload/download API endpoints return 403 Forbidden
+  - Server actions for attachments throw errors
+  - Users cannot upload, download, or manage attachments
+  - Existing attachments remain in the database but are inaccessible
+
+**Usage Examples:**
+```bash
+# Enable attachments (default)
+ENABLE_ATTACHMENTS="true"
+
+# Disable attachments
+ENABLE_ATTACHMENTS="false"
+```
+
+**Use Cases:**
+- Deploy without file storage infrastructure
+- Compliance requirements that prohibit file uploads
+- Temporary maintenance of attachment systems
+- Simplified deployments for specific environments
 
 ---
 

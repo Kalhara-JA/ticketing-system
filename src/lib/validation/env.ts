@@ -35,6 +35,12 @@ const EnvSchema = z.object({
     .union([z.string(), z.boolean()])
     .transform((v) => (typeof v === "string" ? v === "true" : v))
     .optional(),
+
+  // Feature flags
+  ENABLE_ATTACHMENTS: z
+    .union([z.string(), z.boolean()])
+    .transform((v) => (typeof v === "string" ? v === "true" : v))
+    .default(true),
 });
 
 let cached: z.infer<typeof EnvSchema> | null = null;
@@ -60,6 +66,7 @@ export function getEnv() {
     rawEnv.MINIO_ACCESS_KEY = rawEnv.MINIO_ACCESS_KEY ?? "minioadmin";
     rawEnv.MINIO_SECRET_KEY = rawEnv.MINIO_SECRET_KEY ?? "minioadmin";
     rawEnv.MINIO_BUCKET = rawEnv.MINIO_BUCKET ?? "ticket-attachments";
+    rawEnv.ENABLE_ATTACHMENTS = rawEnv.ENABLE_ATTACHMENTS ?? true;
   } else if (isBuildTime) {
     // Provide build-time defaults to avoid validation errors during Docker build
     rawEnv.APP_URL = rawEnv.APP_URL ?? "http://localhost:3000";
@@ -71,6 +78,7 @@ export function getEnv() {
     rawEnv.MINIO_ACCESS_KEY = rawEnv.MINIO_ACCESS_KEY ?? "build_time_access_key";
     rawEnv.MINIO_SECRET_KEY = rawEnv.MINIO_SECRET_KEY ?? "build_time_secret_key";
     rawEnv.MINIO_BUCKET = rawEnv.MINIO_BUCKET ?? "ticket-attachments";
+    rawEnv.ENABLE_ATTACHMENTS = rawEnv.ENABLE_ATTACHMENTS ?? true;
   }
 
   console.log("Validating environment configuration...");
