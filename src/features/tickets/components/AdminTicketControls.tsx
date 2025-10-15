@@ -13,7 +13,6 @@ import type { $Enums } from "../../../../generated/prisma";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const statuses = ["new", "in_progress", "waiting_on_user", "resolved", "closed", "reopened"] as const;
@@ -66,11 +65,11 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="end">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Edit Ticket</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="text-lg font-semibold">Edit Ticket</h3>
+                    </div>
+                    <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="status">Status</Label>
                             <Select value={status} onValueChange={(value) => setStatus(value as $Enums.TicketStatus)}>
@@ -123,8 +122,8 @@ export default function AdminTicketControls({ ticketId, currentStatus, currentPr
                         </div>
 
                         {isPending && <p className="text-sm text-muted-foreground">Saving…</p>}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </PopoverContent>
         </Popover>
     );

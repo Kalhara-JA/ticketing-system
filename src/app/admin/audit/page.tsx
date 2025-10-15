@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
@@ -105,36 +106,36 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
       </div>
 
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b bg-muted/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Time</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Actor</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Action</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Target</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">IP</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">No audit entries found.</td>
-                </tr>
-              ) : (
-                data.items.map((a) => (
-                  <tr key={a.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-6 py-3 text-sm text-foreground">{new Date(a.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-3 text-sm text-foreground">{a.actor?.username ?? a.actor?.email ?? "-"}</td>
-                    <td className="px-6 py-3 text-sm text-foreground">{a.action}</td>
-                    <td className="px-6 py-3 text-sm text-foreground">{a.targetType} #{a.targetId}</td>
-                    <td className="px-6 py-3 text-sm text-muted-foreground">{a.ip ?? "-"}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Time</TableHead>
+              <TableHead>Actor</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Target</TableHead>
+              <TableHead>IP</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No audit entries found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.items.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium">{new Date(a.createdAt).toLocaleString()}</TableCell>
+                  <TableCell>{a.actor?.username ?? a.actor?.email ?? "-"}</TableCell>
+                  <TableCell>{a.action}</TableCell>
+                  <TableCell>{a.targetType} #{a.targetId}</TableCell>
+                  <TableCell className="text-muted-foreground">{a.ip ?? "-"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <Pagination

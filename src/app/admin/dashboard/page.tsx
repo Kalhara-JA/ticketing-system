@@ -13,6 +13,7 @@ import {
     getAvgResolutionHours,
 } from "@/features/tickets/repositories/metricsRepository";
 import { requireAdmin } from "@/lib/auth/session";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 
 export const revalidate = 60; // refresh at most once per minute
@@ -115,34 +116,32 @@ export default async function AdminDashboardPage() {
 
 function SimpleTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full">
-                <thead>
-                    <tr className="border-b">
-                        {headers.map((h) => (
-                            <th key={h} className="px-4 py-3 text-left text-sm font-medium text-gray-900">{h}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody className="divide-y">
-                    {rows.length === 0 ? (
-                        <tr>
-                            <td className="px-4 py-8 text-center text-gray-600" colSpan={headers.length}>
-                                No data available.
-                            </td>
-                        </tr>
-                    ) : (
-                        rows.map((r, i) => (
-                            <tr key={i} className="hover:bg-gray-50 transition-colors">
-                                {r.map((cell, j) => (
-                                    <td key={j} className="px-4 py-3 text-sm text-gray-900">{cell}</td>
-                                ))}
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    {headers.map((h) => (
+                        <TableHead key={h}>{h}</TableHead>
+                    ))}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {rows.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={headers.length} className="h-24 text-center">
+                            No data available.
+                        </TableCell>
+                    </TableRow>
+                ) : (
+                    rows.map((r, i) => (
+                        <TableRow key={i}>
+                            {r.map((cell, j) => (
+                                <TableCell key={j}>{cell}</TableCell>
+                            ))}
+                        </TableRow>
+                    ))
+                )}
+            </TableBody>
+        </Table>
     );
 }
 

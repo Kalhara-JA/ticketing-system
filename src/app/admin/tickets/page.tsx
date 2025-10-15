@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const dynamic = "force-dynamic";
 
@@ -125,68 +126,64 @@ export default async function AdminTicketsPage({ searchParams }: { searchParams:
 
             {/* Table */}
             <div className="card overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Title</th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Requester</th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Status</th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Priority</th>
-                                <th className="px-6 py-3 text-left text-sm font-medium text-foreground">Created</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {data.items.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <p className="text-lg font-medium">No tickets found</p>
-                                            <p className="text-sm">Try adjusting your filters</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : data.items.map(t => (
-                                <tr key={t.id} className="hover:bg-muted/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <Link 
-                                            className="font-medium text-foreground hover:text-primary transition-colors" 
-                                            href={`/admin/tickets/${t.id}`}
-                                        >
-                                            {t.title}
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-foreground">
-                                        {t.user.username}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <Badge variant={
-                                            t.status === 'resolved' ? 'default' :
-                                            t.status === 'closed' ? 'secondary' :
-                                            t.status === 'in_progress' ? 'default' :
-                                            'default'
-                                        }>
-                                            {t.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <Badge variant={
-                                            t.priority === 'urgent' ? 'destructive' :
-                                            t.priority === 'high' ? 'default' :
-                                            t.priority === 'low' ? 'secondary' :
-                                            'default'
-                                        }>
-                                            {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                                        {new Date(t.createdAt).toLocaleDateString()}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Requester</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Priority</TableHead>
+                            <TableHead>Created</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.items.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className="text-lg font-medium">No tickets found</p>
+                                        <p className="text-sm">Try adjusting your filters</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : data.items.map(t => (
+                            <TableRow key={t.id}>
+                                <TableCell className="font-medium">
+                                    <Link 
+                                        className="hover:text-primary transition-colors" 
+                                        href={`/admin/tickets/${t.id}`}
+                                    >
+                                        {t.title}
+                                    </Link>
+                                </TableCell>
+                                <TableCell>{t.user.username}</TableCell>
+                                <TableCell>
+                                    <Badge variant={
+                                        t.status === 'resolved' ? 'default' :
+                                        t.status === 'closed' ? 'secondary' :
+                                        t.status === 'in_progress' ? 'default' :
+                                        'default'
+                                    }>
+                                        {t.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={
+                                        t.priority === 'urgent' ? 'destructive' :
+                                        t.priority === 'high' ? 'default' :
+                                        t.priority === 'low' ? 'secondary' :
+                                        'default'
+                                    }>
+                                        {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {new Date(t.createdAt).toLocaleDateString()}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
 
             {/* Pagination */}
